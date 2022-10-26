@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name:always-clk
+# key:alws_clk
+# --
+always @(posedge ${clk}) begin
+    ${expr}
+end

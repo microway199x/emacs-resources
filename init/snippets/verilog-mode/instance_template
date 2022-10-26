@@ -1,0 +1,14 @@
+# -*- mode: snippet -*-
+# name:instance-template
+# key:inst_t
+# --
+/*
+${instance_module} AUTO_TEMPLATE (
+       .${signals} (${wires}),
+);
+
+*/
+
+${instance_module} ${instance_name} (
+    /*AUTOINST*/
+);

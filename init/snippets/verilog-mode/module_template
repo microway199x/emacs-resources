@@ -1,0 +1,40 @@
+# -*- mode: snippet -*-
+# name:module-template
+# key:module_t
+# --
+//=================================================================
+//date:`(org-insert-time-stamp (current-time))
+//owner:
+//function description:
+//
+//input module & constraints:
+//
+//output module & contraints:
+//=================================================================
+
+module ${1module name}
+#(
+    ${2parameters}
+)
+(
+    ${3ports}
+    /*AUTOINOUT*/
+    /*AUTOINPUT*/
+    /*AUTOOUTPUT*/
+);
+
+    /*AUTOWIRE*/
+    /*AUTOREG*/
+
+endmodule
+//Local Variables:
+//verilog-library-directories:(".","example.v")
+//verilog-library-files:("xxx.v","yyy.v")
+//verilog-library-extensions:(".v",".sv",".bv")
+//verilog-library-flags:("-y example_dir +libext+.v +incdir+example_dir")
+//End:
+
+//=================================================================
+//version info:
+//
+//=================================================================

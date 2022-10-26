@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name:insert-org-header 
+# key:org-hdr
+# --
+#+OPTIONS: ^:nil
+#+OPTIONS: ^:{}
+#+TITLE: ${1:typing org title}

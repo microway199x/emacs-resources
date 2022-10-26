@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name:always-comb
+# key:alws_comb
+# --
+always @(*) begin
+${expr}
+end

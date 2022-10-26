@@ -1,0 +1,16 @@
+# -*- mode: snippet -*-
+# name:week-gtd-box 
+# key:gtd-box
+# --
+
+#* Week:: ${1:week-num} Date:: `(org-insert-time-stamp (current-time))`
+* FAQ[/]
+* Scheduled-Todo[/]                            :< week:
+** IMME & important[/]
+** TODO & important[/]
+** TODO & non-important[/]
+** IMME & non-important[/]
+* Scheduled-Long[/]                            :break down:
+* Wait[/]
+* Inbox[/]
+* Conceled[/]

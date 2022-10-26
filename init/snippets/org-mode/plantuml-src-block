@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name:plantuml-src-block 
+# key: puml_
+# --
+#+BEGIN_SRC plantuml :file ${1:picture name}.png  :cmdline -charset gbk
+@startuml
+    $0
+@enduml
+#+END_SRC
