@@ -8,13 +8,16 @@
        (setq micro-plugin-path (concat micro-config-root-path "plugin\\"))
        (setq micro-config-path (concat micro-config-root-path "micro-config\\"))
        (setq micro-run-path (concat micro-config-root-path "run-command\\"))
-       (setq micro-theme-path (concat micro-config-root-path "themes\\")))
+       (setq micro-theme-path (concat micro-config-root-path "themes\\"))
+       (setq micro-prog-mode-path (concat micro-config-root-path "prog-mode\\")))
     (progn 
         (setq micro-snippets-path (concat micro-config-root-path "snippets/"))
         (setq micro-plugin-path (concat micro-config-root-path "plugin/"))
         (setq micro-config-path (concat micro-config-root-path "micro-config/"))
         (setq micro-run-path (concat micro-config-root-path "run-command/"))
-        (setq micro-theme-path (concat micro-config-root-path "themes/")))))
+        (setq micro-theme-path (concat micro-config-root-path "themes/"))
+        (setq micro-prog-mode-path (concat micro-config-root-path "prog-mode/")))
+    ))
 
 (micro-system-chk)
 
@@ -83,6 +86,9 @@
 
 ;;(add-hook 'org-mode-hook 
 ;;          (load (concat micro-config-path "deft-config")))
+(add-to-list 'auto-mode-alist '("\\.bsv\\'" . bsv-mode))
+(eval-after-load 'bsv-mode
+          (load (concat micro-config-path "bsv-mode-config")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;auto run command ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
