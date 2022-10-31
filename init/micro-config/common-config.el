@@ -47,6 +47,7 @@
 ;;允许emacs和外部其他程序的粘贴
 (setq select-enable-clipboard t)
 (blink-cursor-mode -1)  ;;指针不要闪，我得眼睛花了
+(tool-bar-mode -1)  ;;隐藏tool bar
 (global-auto-revert-mode t);;文件更改后自动加载文件
 ;;(setq auto-save-default nil);;默认300s自动保存一次
 (global-unset-key  (kbd "C-SPC"))

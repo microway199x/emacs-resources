@@ -5,7 +5,7 @@
 (require 'sr-speedbar)  
 (setq speedbar-show-unknown-files t)  
 (setq speedbar-use-images nil)  
-(setq sr-speedbar-width 25)  
+(setq sr-speedbar-width 39)  
 ;;右边绑定调用键为f5
 (global-set-key (kbd "<f5>") (lambda()  
                               (interactive)  
