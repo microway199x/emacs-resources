@@ -1,5 +1,5 @@
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;* 1. common plugin path setting ;;;;;;;;;;;;;;;;;;
 ;; 自定义插件配置 ;;设置插件路径
 (defun micro-system-chk()
   (if (eq system-type `windows-nt)
@@ -21,7 +21,7 @@
 
 (micro-system-chk)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;* 2. common plugin setting ;;;;;;;;;;;;;;;;;;;;;;;
 ;;common settiong
 ;;evil 
 ;;helm or ivy
@@ -35,6 +35,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (add-to-list 'load-path micro-config-path)
+(add-to-list 'load-path micro-prog-mode-path)
 
 (add-hook 'emacs-startup-hook 
           (load (concat micro-config-path "common-config")))
@@ -55,12 +56,14 @@
           (load (concat micro-config-path "sr-speedbar-config")))
 
 (add-hook 'emacs-startup-hook 
-          (load (concat micro-config-path "org-capture-config")))
+          (load (concat micro-prog-mode-path "org-capture-config")))
+
 (add-hook 'emacs-startup-hook 
                  (load (concat micro-config-path "company-mode-config")))
 (add-hook 'emacs-startup-hook 
                  (load (concat micro-config-path "yasnippet-config")))
 
+;;* 2. program mode config   ;;;;;;;;;;;;;;;;;;;;;;;
 ;;(eval-after-load 'c-mode 
 ;;                 '(load (concat micro-config-path "auto-complete-config")))
 ;;(eval-after-load 'verilog-mode 
@@ -69,14 +72,12 @@
 ;;(eval-after-load 'c-mode 
 ;;                 '(load (concat micro-config-path "yasnippet-config")))
 (eval-after-load 'verilog-mode 
-                 '(load (concat micro-config-path "yasnippet-config")))
-(eval-after-load 'verilog-mode 
-                 '(load (concat micro-config-path "verilog-mode-config")))
+                 '(load (concat micro-prog-mode-path "verilog-mode-config")))
 
 (add-to-list 'auto-mode-alist '("\\.txt\\'" . org-mode))
 
 (eval-after-load 'org-mode
-           (load (concat micro-config-path "org-config")))
+           (load (concat micro-prog-mode-path "org-config")))
 
 (eval-after-load 'org-mode
           (load (concat micro-config-path "deft-config")))
@@ -88,7 +89,7 @@
 ;;          (load (concat micro-config-path "deft-config")))
 (add-to-list 'auto-mode-alist '("\\.bsv\\'" . bsv-mode))
 (eval-after-load 'bsv-mode
-          (load (concat micro-config-path "bsv-mode-config")))
+          (load (concat micro-prog-mode-path "bsv-mode-config")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;auto run command ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
