@@ -19,17 +19,17 @@
 (defun v-bsv-outline-hook ()
   ; outline uses this regexp to find headers. 
   ; use indent or noindent "///{, ///{{{, "
-  (setq outline-regexp "[ \t]*///[{\f]+\\|[ \t]*\\(rule\\|function\\|module\\|method\\|interface\\)")
+  ;(setq outline-regexp "[ \t]*///[{\f]+\\|[ \t]*\\(rule\\|function\\|module\\|method\\|interface\\)") //use manually ///{ 
+   (setq outline-regexp "[ \t]*///[{\f]+") ;use manually ///{ 
   ;(setq outline-heading-end-regexp "///[}\f]+") ;; not used
   ;(setq outline-heading-alist `(("chapter". 2) ("section". 2) )) ;; not used
-  ;(setq outline-regexp "[ \t]*///[{\f]+\\|[ \t]*\\(always\\|function\\|module\\)") ;; work fail, use no indent config 
   ;use default fold level, default fold level is column number
   ; enable our level computation
   ;(setq outline-level 'py-outline-level)
   ; do not use their \C-c@ prefix, too hard to type. Note this overides some bindings.
   (setq outline-minor-mode-prefix "\C-t")
   ; turn on outline mode
-  (outline-minor-mode)
+  (outline-minor-mode 1)
   ; initially hide all but the headers
   ;(hide-body)
   ; make paren matches visible
