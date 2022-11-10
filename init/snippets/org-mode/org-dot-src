@@ -1,4 +1,4 @@
-# key: dot_
+# key: dot
 # name:org-dot-src
 # --
 #+BEGIN_SRC dot :file ${1:picture name}.png :cmdline -Kdot -Tpng

@@ -38,7 +38,8 @@
   (define-key evil-normal-state-map (kbd "<backtab>") 'outline-show-subtree) ;;shift + tab
 )
 
-(v-bsv-outline-hook)
+;;; only when bsv-mode buffer execute
+(add-hook 'bsv-mode-hook 'v-bsv-outline-hook)
 
 (require 'bsv-mode)
 (provide 'bsv-mode-config)

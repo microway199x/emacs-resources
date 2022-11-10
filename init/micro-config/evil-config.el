@@ -40,9 +40,6 @@
 (define-key evil-motion-state-map (kbd "<remap> <evil-next-line>") 'evil-next-visual-line)
 (define-key evil-motion-state-map (kbd "<remap> <evil-previous-line>") 'evil-previous-visual-line)
 
-;; Emacs 28.1 后 EVIL，org-mode无法折叠问题
-(setq org-adapt-indentation t)
-(define-key evil-normal-state-map (kbd "TAB") 'org-cycle)
 
 
 (provide 'evil-config)

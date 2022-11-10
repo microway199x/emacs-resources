@@ -37,7 +37,8 @@
   (define-key evil-normal-state-map (kbd "TAB") 'outline-toggle-children)
   (define-key evil-normal-state-map (kbd "<backtab>") 'outline-show-subtree) ;;shift + tab
 )
-(v-verilog-outline-hook)
+;;; only when verolog-mode buffer execute
+(add-hook 'verilog-mode-hook 'v-verilog-outline-hook)
 
 ;;======= Code folding =======
 ;(add-hook 'python-mode-hook 'my-python-outline-hook)

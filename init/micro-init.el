@@ -72,7 +72,7 @@
 ;;(eval-after-load 'c-mode 
 ;;                 '(load (concat micro-config-path "yasnippet-config")))
 (eval-after-load 'verilog-mode 
-                 '(load (concat micro-prog-mode-path "verilog-mode-config")))
+                  (load (concat micro-prog-mode-path "verilog-mode-config")))
 
 (add-to-list 'auto-mode-alist '("\\.txt\\'" . org-mode))
 
@@ -88,7 +88,7 @@
 ;;(add-hook 'org-mode-hook 
 ;;          (load (concat micro-config-path "deft-config")))
 (add-to-list 'auto-mode-alist '("\\.bsv\\'" . bsv-mode))
-(eval-after-load 'bsv-mode
+(eval-after-load 'bsv-mode 
           (load (concat micro-prog-mode-path "bsv-mode-config")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
