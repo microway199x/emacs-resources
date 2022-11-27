@@ -55,12 +55,12 @@
             (progn ;;; if linux
                  (shell-command (concat  "flameshot gui -p " v-org-file-path )))) ;;
 
-         (insert "#+CAPTATION: <typing in>  \n")
-         (insert "#+LABEL:  \n")
+       ;;(insert "#+CAPTATION: <typing in>  \n")
+       ;;(insert "#+LABEL:  \n")
        ;;(insert "#+ATTR_HTML: :TITLE <typing in> :WIDTH 500  \n") 
-         (insert "#+ATTR_HTML: :TITLE <typing in> :WIDTH   \n") ;; 
+       ;;(insert "#+ATTR_HTML: :TITLE <typing in> :WIDTH   \n") ;; 
          (insert (concat "[[./" capture-imag-dir capture-name "]]"))
-         (org-display-inline-images)
+       ;;(org-display-inline-images)
 	 )))
 
 
@@ -81,6 +81,16 @@
       (shell-command (concat "rm -rf " v-line-path-get)))
   (beginning-of-line)
   (kill-line))
+
+
+(defun v-org-snip-del-region ()
+  "del org link and its file  "
+  (interactive)
+  (narrow-to-region (region-beginning) (region-end))
+  (while (search-forward-regexp "\[\[.*_images.*org.*png\]\]")
+    (v-org-snip-del))
+  ;;(widen)
+)
 
 (global-set-key (kbd "C-c p s") 'v-org-snip-insert)
 

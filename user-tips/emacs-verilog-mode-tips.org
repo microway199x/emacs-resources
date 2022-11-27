@@ -1,0 +1,197 @@
+#+OPTIONS: ^:nil
+#+OPTIONS: ^:{}
+#+TITLE: emacs verilog-mode tips
+* 外部程序使用emacs verilog-mode
+#+begin_src
+  //emacs --batch  <filenames.v>  -f verilog-batch-auto
+  //例子
+  emacs --batch test.v -f verilog-batch-auto
+#+end_src
+* 函数
+** verilog-quto-tieoff                                                :常用:
++ 将未使用的输出tieoff，经常用于包空module;
+   #+begin_src
+       verilog-auto-tieoff       for AUTOTIEOFF output tieoffs ///用于将输出固接
+     //需配合verilog-active-low-regexp配置变量使用，设置为true，表示固接或者复位为低电平
+     //但是该变量有时候会导致verilog-auto-tieoff/verilog-auto-reset 失败
+   #+end_src
++ verilog-auto-tieoff-declaration变量，
+  + 设置为"wire"，则使用wire a= 0;
+  + 设置为"assign"，则使用assign a= 0;
+
+** verilog-auto-inout-param                                           :常用:
++ 提供将下一层参数提取到当前层的功能
++ eg：
+  #+begin_src
+    //before
+        module ExampMain ();
+          parameter PARAM = 22;
+        endmodule
+
+        module ExampInoutParam ();
+           /*AUTOINOUTPARAM("ExampMain")*/
+        endmodule
+    //after verilog-auto
+        module ExampInoutParam ();
+           /*AUTOINOUTPARAM("ExampMain")*/
+           // Beginning of automatic parameters (from specific module)
+           parameter       PARAM;
+           // End of automatics
+        endmodule
+  #+end_src
++ 提供正则表达式，用于只提取对应的参数
+  #+begin_src
+    /*AUTOINOUTPARAM("ExampMain","^i")*/
+  #+end_src
+** verilog-auto-instert-last/verilog-auto-insert-lisp
++ xxx-last为在执行verilog-auto之后，再插入执行LISP代码片段
++ xxx-lisp为在执行verilog-auto的时候，插入执行LISP的代码片段
++ [ ] 可以用来自动插入代码模板，以及解析代码片段等
+** verilog-auto-inst --- 最重要                                  :常用:重要:
++ verilog-auto-inst-param-value:
+  + 设置为nil,则例化时使用参数而不会被替换为值
+  + 设置为t,则例化时将参数例化为值
++ 放在/*AUTOINST*/前的信号不会被自动例化
++ auto-inst 模板
+  + verilog-auto-inst-template-numbers设置
+    - 可以设置为 t/ture/lhs， 其中lhs会在template例化信号后面添加当前
+      信号对应的匹配的AUTO_TEMPLATE rules
+  + 多个模块公用模板,当多个模块模板相同时可以简化使用
+      #+begin_src
+       /* InstModuleA AUTO_TEMPLATE
+           InstModuleB AUTO_TEMPLATE
+           InstModuleC AUTO_TEMPLATE
+           InstModuleD AUTO_TEMPLATE (
+                .ptl_bus        (ptl_busnew[]),
+                );
+        */
+       #+end_src
+  + 当一个模块例化多次，并且需要使用不同的模板时，直接将使用不同模板的
+    例化INST放在对应模板后面即可
+      #+begin_src
+       //Template A
+       /* InstModuleA AUTO_TEMPLATE (
+                .ptl_bus        (ptl_busnew[]),
+                );
+        */
+       //UA,UB使用template A
+        InstModuleA UA_TEMPLATE ( /*AUTOINST*/
+                                );
+        InstModuleA UB_TEMPLATE ( /*AUTOINST*/
+                                );
+
+       //Template B
+       /* InstModuleA AUTO_TEMPLATE (
+                .ptl_bus        (ptl_busnew[]),
+                .aaa_bus        (aaa_bus_new[]),
+                .b_bus          (b_bus_new[]),
+                );
+        */
+       //UC,UD使用template B
+        InstModuleA UC_TEMPLATE ( /*AUTOINST*/
+                                );
+        InstModuleA UD_TEMPLATE ( /*AUTOINST*/
+                                );
+       #+end_src
+
+  + 当一个模块例化多次，使用模块部分模块例化名等
+    #+begin_src
+      ///方式1: 使用@符号提取 instance name中的正则匹配的变量
+             /* InstName AUTO_TEMPLATE <optional "REGEXP"> (
+                .sig1   (sigx[@]),
+                .sig2   (sigy[@"(% (+ 1 @) 4)"]),
+                );
+             */
+      ///方式2: 使用lisp表达式，提取vl-cell-name（例化名）
+         //假设sig1为input, sig2为output
+             /* InstName AUTO_TEMPLATE(
+                .sig1   (@"vl-name"_@"vl-dir"),
+                .sig2   (@"vl-name"_@"(substring vl-cell-name 2)"),
+                );
+             */
+             InstName U_AA(/*AUTOINST*/
+                .sig1   (sig1_input),
+                .sig2   (sig2_AA   ),   //提取instance name的部分字符串
+             );
+      ///方式2.1: 注意在模板中使用字符串时，需要使用  \\"string-in-lisp-code\\"
+      /// 原因时Elisp会把\当做特殊字符？如果想要使用\字符，则需要通过 \\完成转义？
+      /// 同理，如果在模板的代码中使用正则表达式时，则为 \\\\？
+             /* InstName AUTO_TEMPLATE(
+                .sig1   (@"vl-name"_@"vl-dir"),
+                .sig2\(.*\)  (@"vl-name"_\1_@"(if (string-equal vl-dir) \\"input\\" \\"output\\")" ),
+                //@"..."引号中的部分会被当做时lisp表达式，并且会按照lisp表达式执行替换；
+                //模板例化信号名字为：端口信号名+端口信号名匹配.*部分+（如果为输入，则_input,如果为输出则_output）
+                );
+    #+end_src
++ Lisp template: 
+  + 如果，当前template不是使用正则匹配的表达式，则LISP表达式中的所有
+    "字符，使用\"表示。
+  + 如果，当前template是使用正则匹配的表达式，则LISP表达式中的所有
+    "字符，使用\\"表示。
+  + 原句:Quote all double-quotes inside the expression with a leading
+    backslash (\"...\"); or if the Lisp template is also a regexp
+    template backslash the backslash quote (\\"...\\").
+  + [ ] 使用auto_lisp可以添加comment，/*AUTO_LISP(setq foo 1)*/
+** verilog-auto-inst-param                                            :常用:
++ 用于template快速例化参数，
++ 支持只有正则匹配的参数才例化
++ 或者使用？!，表示匹配xxx的不例化，比如？！xxx,不例化xxx参数
+
+** verilog-auto-unused
++ 将不使用的input信号接到 _ununsed_ok 信号上；方便检查，
+
+** verilog-compiler/verilog-set-compile-command                       :常用:
++ 使用compile命令自动compile文件
++ next-error跳转到下一条错误；
++ [ ] 使用verilog-preprocess命令完成简单的预编译检查？
++ 通过verilog-set-compile-command设置编译命令
+
+** verilog-inject-auto::function
++ 用于已经有verilog file，但是还没有使用verilog-mode的情况？
++ 自动插入AUTOS
+
+** 指定当前文件需要的文件来源变量                                :常用:重要:
++ verilog-library-directories
++ verilog-library-files
++ verilog-library-flags
++ verilog-library-extensions
+  #+begin_src
+    // Local Variables:
+    // verilog-library-directories:("." "subdir" "subdir2")
+    // verilog-library-files:("/some/path/technology.v" "/some/path/tech2.v")
+    // verilog-library-flags:("-f filename -y dir -y otherdir")
+    // verilog-library-flags:(".v",".sv")
+    // End:
+  #+end_src
+
+** verilog-read-defines
++ 获取define/parameter变量，并且将变量存入vh-{definename}中，并且可以
+  在AUTOS的LISP变量中可以使用。
+
+** verilog文件中，可以在文件末尾指定只在当前文件下生效的变量          :常用:
+#+begin_src
+    // Local Variables:
+    // verilog-auto-read-includes:t
+    // verilog-auto-lineup:'all
+    // indent-tabs-mode: nil
+    // End:
+#+end_src
+
+** verilog-read-sub-decls::function::                                 :常用:
++ 获取连接到module的信号名，并且返回一个list，按照
+  [outputs,inouts,inputs]排列
++ 只会在/*AUTOINST*/的信号下生效，但是也可以是用//Inputs //Output手动
+  指定
+
+** verilog-auto-inout-comp/verilog-auto-output-every/verilog-auto-inout-in::function
++ 用于将该模块的输入输出反向，比如input变成output，用于搭建对接模块或者测试模块；
++ verilog-auto-output-every:用于将所有内部信号全部输出，用于debug等；
++ verilog-auto-reg-input:用于将所有输入信号变成reg信号，用于环境搭建
++ verilog-auto-input-in:用于将所有信号全部变为输入信号，用于验证环境搭建
++ verilog-auto-inout-module:用于将模块所有输入输出信号全部提取出来，用于需要空壳场景时使用。
+** verilog-load-file-at-point
++ 用于加载当前光标下的模块对应的文件，一般不使用，可以用于快速跳转
+
+* reference 
+https://veripool.org/verilog-mode/help/#verilog-compiler
+https://veripool.org/verilog-mode/help/
