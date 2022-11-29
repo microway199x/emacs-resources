@@ -13,6 +13,7 @@
   (setq enable-local-eval t)
   (setq verilog-auto-newline t)
   (setq verilog-auto-indent-on-newline t)
+  (setq verilog-auto-inst-column 60)
 
 ;;* 2. outline mode header config
 
