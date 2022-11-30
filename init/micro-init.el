@@ -50,25 +50,31 @@
                  (load (concat micro-config-path "magit-config")))
 
 (add-hook 'emacs-startup-hook 
-          (load (concat micro-config-path "which-key-config")))
+          (load (concat micro-config-path "sr-speedbar-config")))
 
 (add-hook 'emacs-startup-hook 
-          (load (concat micro-config-path "sr-speedbar-config")))
+          (load (concat micro-config-path "which-key-config")))
 
 (add-hook 'emacs-startup-hook 
           (load (concat micro-prog-mode-path "org-capture-config")))
 
 (add-hook 'emacs-startup-hook 
                  (load (concat micro-config-path "company-mode-config")))
+
 (add-hook 'emacs-startup-hook 
                  (load (concat micro-config-path "yasnippet-config")))
+
+;;show put before bbyac-config, for bbyac.el require browse-kill-ring
+(add-hook 'emacs-startup-hook 
+                 (load (concat micro-config-path "browse-kill-ring-config")))
+(add-hook 'emacs-startup-hook 
+                 (load (concat micro-config-path "bbyac-config")))
 
 ;;* 2. program mode config   ;;;;;;;;;;;;;;;;;;;;;;;
 ;;(eval-after-load 'c-mode 
 ;;                 '(load (concat micro-config-path "auto-complete-config")))
 ;;(eval-after-load 'verilog-mode 
 ;;                 '(load (concat micro-config-path "auto-complete-config")))
-;;   
 ;;(eval-after-load 'c-mode 
 ;;                 '(load (concat micro-config-path "yasnippet-config")))
 (eval-after-load 'verilog-mode 
@@ -87,9 +93,14 @@
 
 ;;(add-hook 'org-mode-hook 
 ;;          (load (concat micro-config-path "deft-config")))
+
 (add-to-list 'auto-mode-alist '("\\.bsv\\'" . bsv-mode))
+
 (eval-after-load 'bsv-mode 
-          (load (concat micro-prog-mode-path "bsv-mode-config")))
+            (load (concat micro-prog-mode-path "bsv-mode-config")))
+
+(eval-after-load 'help-mode
+          (load (concat micro-config-path "elisp-demos-config")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;auto run command ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
