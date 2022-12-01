@@ -14,6 +14,8 @@
   (setq verilog-auto-newline t)
   (setq verilog-auto-indent-on-newline t)
   (setq verilog-auto-inst-column 60)
+;; 可以修改 verilog-mode中的函数，verilog-insert-definition中的
+;;  indent-to变量最大值，设置自动定义变量的宽度,比如 input、output、wire等
 
 ;;* 2. outline mode header config
 

@@ -13,11 +13,15 @@
   """open todo file and agenda mode"""
   (interactive)
   (find-file (concat micro-org-capture-path "todo.org"))
+  (find-file (concat micro-org-capture-path "todo_capture.org"))
   (org-mode)
   (setq org-agenda-start-with-log-mode t)
-  (setq org-agenda-files (list (concat micro-org-capture-path "todo.org")))
-  (org-agenda)
-  (org-agenda-day-view))
+  (setq org-agenda-files (list (concat micro-org-capture-path "todo.org")
+                               (concat micro-org-capture-path "todo_capture.org")
+                          ))
+  ;;(org-agenda)
+  ;;(org-agenda-day-view)
+  )
 
 ;;(setq org-agenda-files (file-expand-wildcards (concat micro-org-capture-path "*.org")))
 ;;(setq org-agenda-files (list (file-expand-wildcards (concat micro-org-capture-path "*.org"))))
