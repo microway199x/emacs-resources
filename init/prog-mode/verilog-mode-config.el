@@ -16,6 +16,8 @@
   (setq verilog-auto-inst-column 60)
 ;; 可以修改 verilog-mode中的函数，verilog-insert-definition中的
 ;;  indent-to变量最大值，设置自动定义变量的宽度,比如 input、output、wire等
+;; can use load module to use new version plugin
+;;(load xxx/xx/verilog-mode.el)  ;;example
 
 ;;* 2. outline mode header config
 
