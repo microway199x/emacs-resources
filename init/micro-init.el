@@ -35,10 +35,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (add-to-list 'load-path micro-config-path)
+(add-to-list 'load-path micro-plugin-path)
 (add-to-list 'load-path micro-prog-mode-path)
 
 (add-hook 'emacs-startup-hook 
           (load (concat micro-config-path "common-config")))
+(add-hook 'emacs-startup-hook 
+          (load (concat micro-config-path "undo-plugin-config")))
 
 (add-hook 'emacs-startup-hook 
           (load (concat micro-config-path "evil-config")))

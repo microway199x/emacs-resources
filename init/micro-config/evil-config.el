@@ -14,21 +14,8 @@
 (require 'evil)
 ;;默认不启动evil，手动启动
 (evil-mode t)
-;;(setq evil-default-state 'emacs)  ;;default is vim-mode ,use this set to emacs-mode default
-;(define-key evil-emacs-state-map (kbd "C-o") 'evil-execute-in-normal-state)
-;; 下面4行是设置使用C-d作为ESC按键，这个自己看吧
-;; (define-key evil-insert-state-map (kbd "C-d") 'evil-change-to-previous-state)
-;; (define-key evil-normal-state-map (kbd "C-d") 'evil-force-normal-state)
-;;(define-key evil-replace-state-map (kbd "C-d") 'evil-normal-state)
-;;(define-key evil-visual-state-map (kbd "C-d") 'evil-exit-visual-state)
-;; 以下设置时使用t作为多剪贴板的起始按键，比如 tay(不是 "ay哦) tap(就是"ap啦)~
-;(define-key evil-normal-state-map "t" 'evil-use-register) 
-;;;(setq evil-toggle-key "")	; remove default evil-toggle-key C-z, manually setup later
-;(setq evil-want-C-i-jump nil)	; don't bind [tab] to evil-jump-forward
-;    
-;;; remove all keybindings from insert-state keymap, use emacs-state when editing
-;(setcdr evil-insert-state-map nil)
-;    
+;(evil-set-undo-system 'undo-redo)
+(evil-set-undo-system 'undo-tree) ;;compat with emacs 24.3
 ;;; ESC to switch back normal-state
 (define-key evil-insert-state-map [escape] 'evil-normal-state)
 ;;; TAB to indent in normal-state
@@ -40,6 +27,21 @@
 (define-key evil-motion-state-map (kbd "<remap> <evil-next-line>") 'evil-next-visual-line)
 (define-key evil-motion-state-map (kbd "<remap> <evil-previous-line>") 'evil-previous-visual-line)
 
+
+;; (setq evil-default-state 'emacs)  ;;default is vim-mode ,use this set to emacs-mode default
+;; (define-key evil-emacs-state-map (kbd "C-o") 'evil-execute-in-normal-state)
+;; 下面4行是设置使用C-d作为ESC按键，这个自己看吧
+;; (define-key evil-insert-state-map (kbd "C-d") 'evil-change-to-previous-state)
+;; (define-key evil-normal-state-map (kbd "C-d") 'evil-force-normal-state)
+;; (define-key evil-replace-state-map (kbd "C-d") 'evil-normal-state)
+;; (define-key evil-visual-state-map (kbd "C-d") 'evil-exit-visual-state)
+;; 以下设置时使用t作为多剪贴板的起始按键，比如 tay(不是 "ay哦) tap(就是"ap啦)~
+;; (define-key evil-normal-state-map "t" 'evil-use-register) 
+;; (setq evil-toggle-key "")	; remove default evil-toggle-key C-z, manually setup later
+;; (setq evil-want-C-i-jump nil)	; don't bind [tab] to evil-jump-forward
+;;    
+;; remove all keybindings from insert-state keymap, use emacs-state when editing
+;; (setcdr evil-insert-state-map nil)
 
 
 (provide 'evil-config)

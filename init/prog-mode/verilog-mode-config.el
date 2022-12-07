@@ -43,9 +43,6 @@
 ;;; only when verolog-mode buffer execute
 (add-hook 'verilog-mode-hook 'v-verilog-outline-hook)
 
-;; can use load module to use new version plugin
-;;(load xxx/xx/verilog-mode.el)  ;;example
-
 ;;======= Code folding =======
 ;(add-hook 'python-mode-hook 'my-python-outline-hook)
 ;; this gets called by outline to deteremine the level. Just use the length of the whitespace
