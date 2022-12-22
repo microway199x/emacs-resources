@@ -31,7 +31,9 @@
       '(buffer-file-name "%f" (dired-directory dired-directory "%b")) ;;显示当前buffer路径名
       ")"))
 ;; 默认显示 80列就换行
-(setq default-fill-column 80) 
+(setq default-fill-column 99) 
+(setq-default fill-column 99) 
+(global-display-fill-column-indicator-mode)
 ;; 一打开就起用 text 模式。
 (setq default-major-mode 'text-mode) 
 (setq-default tab-width 4) 
@@ -42,8 +44,7 @@
 (setq gnus-inhibit-startup-message t)
 (setq-default make-backup-files nil);;不生成临时文件
 (setq make-backup-files nil);;不生成临时文件
-(mouse-avoidance-mode 'animate)
-;;光标靠近鼠标指针时，让鼠标指针自动让开，别挡住视线。
+(mouse-avoidance-mode 'animate)  ;;光标靠近鼠标指针时，让鼠标指针自动让开，别挡住视线。
 ;;允许emacs和外部其他程序的粘贴
 (setq select-enable-clipboard t)
 (blink-cursor-mode -1)  ;;指针不要闪，我得眼睛花了
