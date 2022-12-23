@@ -15,7 +15,10 @@
 ;;这样，当写 a_{b} 时，_后被 {} 括起来的内容就会被转义，而写 a_b 时，就按普通的方式来显示。
 
 ;;org sites 的解决办法
-;;如果你是用 org sites 来写笔记，想让某个 site 的所有 org 文件不转义 _ 字符，则也可以直接在 org sites 配置文件里，配置下面这么一句，一了百了：
+
+;;如果你是用 org sites 来写笔记，想让某个 site 的所有 org 文件不转义 _ 字符，则
+;;也可以直接在 org sites 配置文件里，配置下面这么一句，一了百了：
+
 ;;(setq org-export-with-sub-superscripts nil)
 ;;也可以在 org sites 里设置这个属性，只作用于某一个 site：
 ;;    :sub-superscript nil
@@ -115,7 +118,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; org MISC设置
-(setq default-fill-column 80)
+(add-hook 'org-mode-hook
+          (lambda () (setq-default fill-column 80)))
 (auto-fill-mode t)
 (setq org-startup-indented t)
 (require 'ox-freemind)

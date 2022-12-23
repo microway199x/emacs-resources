@@ -31,8 +31,7 @@
       '(buffer-file-name "%f" (dired-directory dired-directory "%b")) ;;显示当前buffer路径名
       ")"))
 ;; 默认显示 80列就换行
-(setq default-fill-column 99) 
-(setq-default fill-column 99) 
+(setq-default fill-column 80) 
 (global-display-fill-column-indicator-mode)
 ;; 一打开就起用 text 模式。
 (setq default-major-mode 'text-mode) 
