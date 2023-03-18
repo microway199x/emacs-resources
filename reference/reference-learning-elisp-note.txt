@@ -1,0 +1,3769 @@
+#+OPTIONS: ^:nil
+#+OPTIONS: ^:{}
+#+TITLE: reference learning elisp notes
+* 使用elisp脚本编程                                                    :blog:
+** origin link:
+ https://www.cnblogs.com/csophys/archive/2012/07/12/2588299.html
+**  使用elisp脚本编程
+*** 引言
+目前，编程脚本语言python等非常流行，当然python有很强的优势，emacs作为一种编辑器
+也为python提供了很好的编辑环境。但是对于一些基本的逻辑处理，字符串处理，输入输出
+处理等，作为Emacs的脚本语言Elisp已经非常强大了，而且简约的函数数编程非常令人喜欢，
+学习也非常容易，利用emacs内置的一些帮助方式，在目前的需求下，几乎再也不需要额外
+的elisp学习资料。所以我坚持使用elisp来做一些处理，但是希望写好的程序也能给不会
+emacs的人使用，所以想写下这篇博客，希望有同样想法的emacser友喜欢，也希望emacs在
+国内能够更加地流行。
+*** 目的
+在引言中也已经提到了，写这篇文章的主要目的是想编写单独的elisp脚本,具有“标准输入
+输出”功能，能够完成其他编程脚本具有的绝大部分功能，正常运行于所有装配有emacs编
+辑器的平台之上，也能让自己编写的elisp让非Emacser正常使用。 下面列举一些使用elisp
+编程能够到达的效果。
+*** elisp 能够编程的理由以及优势
+1. 写出单独的脚本文件，可以使用【emacs -nw -q -l "所在文件位置"】运行，也可以不
+   使 用-nw参数，以图形化启动。能够在emacs支持的所有平台上运行，跨平台能力强。
+2. emacs零基础者也可以顺利运行程序,只需要打一个启动脚本的命令，或者elisp编写 者
+   可以直接给写一个bat脚本或者bash脚本。让运行elisp方式更加地简单。
+3. emacser 可以在程序运行完的同时继续在显示结果的emacs上操作。因为elisp是借用
+   emacs的 elisp解释器运行的。所以,当elisp运行完毕后，界面仍然是emacs的界面，
+   emacser 可以继续使用这个emacs. 在上面一点的基础上，可以借用elisp内置于emacs的
+   优势， 使得显示效果更加地绚丽。你可以让emacs创建多个windows,甚至多个frame，然
+   后在不同的windows上显示结果，emacs24后对emacs的内置功能也增加了不少，可以有更
+   多地库函数供elisp使用，当然你也可以不用-q参数启动emacs,那样就可以使用emacs无
+   穷地扩展性，作为emacser爱好者的你能想象的，这个是使用其他脚本语言很难达到的效
+   果。
+4. 书写简单，功能强大。elisp语言非常简单，库函数丰富，而且最主要的是配套设施完善，
+   具有edebug这个源码级的调试工具，也具有emacs内置的非常多的帮助方式。也因为
+   emacs是开源的，所以在你面前，一切都可以是赤裸裸的。
+*** 自我文档化
+  当然学习elisp是非常方便的。emacs内置有两边elisp的书籍。启动emacs后按 快捷键
+  Ctrl h i就可以进入到emacs的 *info*。这两本emacs的书籍如下，需要的可以自己前往
+  看，当然也可以在emacs官网下载pdf版本，或者直接购买纸质版本。
+
+  1. Elisp
+
+     The Emacs Lisp Reference Manual
+  2. Emacs Lisp Intro
+
+    (A simple introduction to Emacs Lisp programming)
+  3. emacs的elisp帮助系统
+
+     如果你对一个函数或者变量不熟悉，你可以使用Ctrl h f或者Ctrl h v来查看它的使
+     用方式。当然也可以使用快捷键Alt x ，输入find-function或者find-variable来直
+     接观看其源代码。或者使用edebug直接来调试。
+*** 几个简单的示例
+
+  下面2个简单的示例都是在windows上使用[emacs -nw -q -l "test.el" ] 命令启动的。
+  test.el为elisp脚本所在位置。可以用一张图为描述下，图貌似比较丑，使用
+  emacs-graphviz生成的。
+
+  [[./_images_reference-learning-elisp-note.txt/20230318114357.png]]
+
+  其中的autoinsert部分没有用过的朋友可以参考emacswiki的介绍。autoinsert主要是插
+  入一些公共模板，提高编程效率。在这里 可以把
+
+  #+BEGIN_SRC elisp
+  ;;;auto-insert 开始
+  (setq inhibit-startup-message t);
+  (insert "************************************************************\n")
+  (insert "如需翻阅：请按CTRL+V向下翻阅,ALT+V向上翻阅\n");
+  (insert "************************************************************\n")
+  ;;;auto-insert 结束
+  #+END_SRC elisp
+
+  等一些公共部分用autoinsert自动插入。
+
+  下面两个例子都相对简单:
+
+   1. 示例1主要示范交互功能，在终端下显示
+   2. 示例2示范多个buffer功能，在图形化下显示。
+
+  希望有兴趣的朋友可以借用emacs编写更有吸引力的示例。
+****  示例1
+  #+BEGIN_SRC elisp
+   ;;;auto-insert 开始
+   (setq inhibit-startup-message t);
+   (insert "************************************************************\n")
+   (insert "如需翻阅：请按CTRL+V向下翻阅,ALT+V向上翻阅\n");
+   (insert "************************************************************\n")
+   ;;;auto-insert 结束
+
+   ;一些基本的环境获取--------------------------------------------------
+   ;判断是否是windows操作系统
+   (if (eq system-type 'windows-nt)
+       (insert "当前操作系统是windows\n")
+       (insert "非windows操作系统\n")
+       )
+
+   ;;;;设置和输出用户名
+   (setq user-full-name "csophys")
+   (insert (concat "你的用户名为" user-full-name  "\n"))
+
+    ;输出系统home变量值
+   (insert (concat "你的系统home变量为" (getenv "home") "\n"))
+
+    ;显示emacs主版本号
+   (insert (concat "你的emacs的主版本号为:" (number-to-string emacs-major-version)) "\n")
+   ;;;;一些基本的环境获取-----------------------------------------------
+
+   (insert "这是一个简单的字符串处理函数，输入一个带扩展名的文件名，去除它的扩展名\n")
+   (insert (concat "去除扩展名后为:" (file-name-sans-extension (read-string "请输入一个含扩展名的文件名："))"\n" ))
+
+   (insert (concat "去除扩展名后为:" (file-name-sans-extension (read-string "请再次输入一个含扩展名的文件名："))"\n" ))
+  #+END_SRC elisp
+
+   运行过程中的截图如下：
+     [[./_images_reference-learning-elisp-note.txt/20230318114625.png]] 
+
+     [[./_images_reference-learning-elisp-note.txt/20230318114636.png]] 
+
+     [[./_images_reference-learning-elisp-note.txt/20230318114702.png]]
+**** 示例2
+  #+BEGIN_SRC elisp
+   ;;;auto-insert 开始
+   (setq inhibit-startup-message t);
+   (insert "************************************************************\n")
+   (insert "如需翻阅：请按CTRL+V向下翻阅,ALT+V向上翻阅\n");
+   (insert "************************************************************\n")
+   ;;;auto-insert 结束
+
+   (create-file-buffer "result.txt")
+   (switch-to-buffer "result.txt")
+   (insert "正在进行一些计算，请安心等待结果....\n" )
+   (insert "假设在进行一些耗时的运算......\n")
+   (insert "假设在进行一些耗时的运算......\n")
+   (insert "假设在进行一些耗时的运算......\n")
+   (insert "假设在进行一些耗时的运算......\n")
+   (split-window-below)
+   (other-window 1)
+   (snake)
+  #+END_SRC elisp
+
+   运行过程中的截图如下：
+   [[./_images_reference-learning-elisp-note.txt/20230318114802.png]]
+
+
+* 学习 Elisp用于通用脚本（不知多久能学会Elisp）                        :blog:
+** refer link
+感谢原作者，原文链接如下：
+https://segmentfault.com/a/1190000039802488
+
+** 前言（不知多久能学会Elisp）
+在一个春天的夜晚，好久也没怎么出门的我，偶然发现 Emacs Lisp 程序能够像脚本程序那
+般运行，而不仅仅是用于为文本编辑器 Emacs 编写配置文件或插件。这个发现，让我觉得
+无意中发现了一宗瑰奇的宝藏。
+
+关于 Lisp 语言的源远流长及其与 Emacs 的莫逆之交，有很多书籍和文章早已给出了严肃
+的介绍，在此我就不必再行考证和阐述了……没人发稿费，就没必要凑字数。下面，大致总
+结一下为什么我会觉得能像脚本程序那般运行的 Emacs Lisp 程序蕴含着一宗宝藏：
+
+    1. Emacs Lisp 具备着通用的编程语言应该具备的元素，可用于编写在计算机上解释运
+       行的程序。
+    2. Emacs Lisp 是一种 Lisp 方言，继承了 Lisp 语言的一些重要特性，例如支持泛函
+       编程（Functional Progarmming），可基于宏实现语法扩展。与那些更好的 Lisp
+       方言相比，Emacs Lisp 存在一些差距 ，却也无伤大雅，因为在通晓 Emacs Lisp
+       的基础上，再学习其他更好的 Lisp 方言，仅需要再理解寥寥几个新的概念，诸如
+       续延（Continuation）、卫生宏（Hygienic macro）等。
+    3. 使用 Emacs Lisp 语言编写的程序具备跨平台性。Emacs 可在 GNU/Linux，Windows，
+       Mac OS 以及 FreeBSD 等系统上运行，因而使用 Emacs Lisp 语言编写的程序通常
+       可毫无障碍地这些系统中运行。
+    4. Emacs Lisp 程序可调用 C 程序库里的函数，因而其性能瓶颈可基于 C 程序予以弥
+       补。
+    5. Emacs Lisp 具备其他编程语言可能没有的一些特性，这个特性并不来自语言，而是
+       来自 Emacs 自身。迄今为止，Emacs 依然称得上世上最好的文本编辑器，它在文本
+       处理方面长期以来凝聚了众多智慧，而这些智慧早已积淀形成了一个庞大的 Emacs
+       Lisp 代码库。这是否意味着，在我使用 Emacs Lisp 编写一个程序用于处理某种特
+       定格式的文本时，有近乎取之不尽的代码可用呢？
+
+诚然，Emacs Lisp 有一些先天不足。不过，对于文本处理方面的任务而言，Emacs 自身的
+存在足以证明这些先天不足是次要矛盾。我所说的能像脚本程序那般运行的 Emacs Lisp 程
+序蕴含着一宗宝藏，主要针对编写文本处理程序而言。
+
+基于上述构想，我为了消费这宗宝藏而作出了以下这些微小的尝试：
+
+   + Hello world!
+   + 文本解析
+   + 变量
+   + 迭代
+   + 文本匹配
+   + 缓冲区变换
+   + 命令行程序界面
+   + 文本跨行提取
+   + 库
+   + 宏
+   + 动态模块
+   + 兔子洞
+
+我不是 Emacs 专家，也不是 Lisp 专家，只是一个希望 Emacs Lisp 能在生活中发挥一些
+作用的人。在上述的尝试里，我像许多人那样，将 Emacs Lisp 简称为 Elisp，以略微减轻
+手指关节的劳损。
+*** refer doc
+     https://www.emacswiki.org/ema...
+     Emacs 自版本 25 开始支持加载 C 语言写的动态库。 
+     https://www.emacswiki.org/ema...
+** Elisp-01: hello world
+
+倘若将 Elisp 的应用场景固定为文本处理，学习 Elisp，我认为无需像学习其他任何一门
+编程语言那样亦步亦趋，所以本章直接从文件读写开始入手，通过一些小程序，建立对
+Elisp 语言的初步感受。
+*** Hello world!
+
+ 虽然我已决定从文件读写开始学习 Elisp，但是我还是希望像学习任何一门编程语言那样，
+ 从写一个能够输出 Hello world! 的程序开始。
+
+ 用 Emacs 新建一份文本文件，名曰 hello-world.el。当然，也可以使用其他文本编辑器
+ 完成此事，但是要保证系统已安装了 Emacs 且可用。
+
+ hello-world.el 的内容只有一行：
+#+BEGIN_SRC Elisp
+ (princ "Hello world!\n")
+#+END_SRC
+ 在终端（或命令行窗口）里，将工作目录（当前目录）切换至 hello-world.el 文件所在
+ 的目录，然后执行
+
+#+BEGIN_SRC Elisp
+ $ emacs -Q --script ./hello-world.el
+#+END_SRC 
+
+ 终端会随即显示
+
+ Hello world!
+
+ 从这个 Hellow world 程序里，能学到哪些 Elisp 知识呢？
+
+ 1. 首先，princ 是一个函数，确切地说，是 Elisp 的内建函数。什么是函数？在数学里，
+    y=f(x) 是函数，f 可将 x 映射为 y。princ 也是这样的函数，它将 "Hello world!\n
+    这个对象映射为显示于终端的对象，姑且这样认为。
+
+ 2. 其次，"Hello world!\n" 是 Elisp 的字符串类型，用于表示一段文本。文本是数据。
+    数据未必是文本。若将 Elisp 作为用于处理文本的语言，字符串就是基本且核心的数
+    据类型。
+
+ 3. 最后，这个作为示例的 Elisp 程序的最小单位是一个函数调用。我向 princ 函数提供
+    一个字符串类型的值，便可令其工作，且足以构成一个程序。Emacs 里有 Elisp 解释
+    器。Elisp 程序是由 Elisp 解释器解释运行的，类似于计算机程序是由计算机的 CPU
+    「解释」运行。换言之，Elisp 解释器能够读懂 Elisp 程序，并完成这个程序所描述
+    的工作，例如在终端里输出 Hello world!。
+
+ 习题：在 Hello world 程序中，将字符串 "Hello world!\n" 里的 \n 删除，然后重新运
+ 行程序，观察终端的输出有何变化。定义一个新的函数
+
+ "Helo world!\n" 里的 \n 是换行符。计算机键盘上的 Enter 键，在大多数情况下，所起
+ 的作用便是 \n。从 Enter 键的角度看待
+
+#+BEGIN_SRC Elisp
+ (princ "Hello world!\n")
+#+END_SRC Elisp
+
+ 就像我们在与他人在网络上聊天一样，输入 Hello world，然后单击 Enter 键发送。下面，
+ 我定义了一个新的函数 princ\'，它可以接受我要发送的信息，然后帮我发送：
+
+#+BEGIN_SRC Elisp
+ (defun princ\' (x)
+   (princ x)
+   (princ "\n"))
+#+END_SRC Elisp
+
+ 定义一个函数，遵循的格式是
+
+#+BEGIN_SRC Elisp
+ (defun 函数名 (参数)
+   函数体)
+#+END_SRC Elisp
+
+ 函数体由一个或一组表达式构成。在 princ\' 的定义中，函数体由两个表达式构成。
+
+ 一旦函数有了定义，便可以调用，就像调用 princ 函数那样。下面是基于 princ\' 重写
+ 的 Hello world 程序，
+
+#+BEGIN_SRC Elisp
+ (defun princ\' (x)
+   (princ x)
+   (princ "\n"))
+
+ (princ\' "Hello world!")
+#+END_SRC Elisp
+
+*** 缓冲区
+ 假设存在文本文件 foo.txt，其内容为
+
+ Hello world!
+
+ 如何写一个 Elisp 程序，从 foo.txt 读取全部内容并输出到终端？
+
+ 读取文件，这个操作意味着什么？意味着从计算机辅存（硬盘）中获取数据，放入主存
+ （内存）。原因在于，计算机 CPU 访问主存的速度远快于辅存。
+
+ 为了简化文件的读写，Elisp 提供一种数据类型——缓冲区（Buffer）。任何一种编程语言，
+ 都有数据类型，例如整型数字，浮点型数字，字符串，数组，列表等，这些类型在 Elisp
+ 语言里也是有的。 *缓冲区也是一种数据类型* 。缓冲区对象（也可称为缓冲区实例）本
+ 质上是计算机主存里的一段空间。文件的内容被读取后，存入缓冲区实例里，在后者中可
+ 进行文件内容的编辑工作。编辑完毕后，缓冲区实例包含的信息可以再存回文件。为了便
+ 于描述，在不至于引起误解的前提下，我会将缓冲区实例简称为缓冲区。类似的称谓也适
+ 用于 Elisp 的其他数据类型上。
+
+ 使用 Elisp 函数 generate-new-buffer 可以创建一个有名字的缓冲区。例如，创建一个
+ 名曰 foo 的缓冲区：
+
+#+BEGIN_SRC Elisp
+ (generate-new-buffer "foo")
+#+END_SRC Elisp
+
+ 能创建一个，就能创建多个，但是无论创建了多少个，其中只可能有一个是激活的，亦即
+ 当前缓冲区。在读取文件时，从文件获取的数据总是存放在当前缓冲区内。Elisp 函数
+ buffer-name 可以获得当前缓冲区的名字。以下程序可查看当前缓冲区的名字：
+
+#+BEGIN_SRC Elisp
+ (princ\' (buffer-name))
+#+END_SRC Elisp
+
+ Elisp 解释器有一个默认的缓冲区，名字叫 *scratch*。倘若没有创建新的缓冲区并将其
+ 激活为当前缓冲区，那么上述程序的输出就是 *scratch*。
+
+ Elisp 函数 set-buffer 可将指定的缓冲区设为当前缓冲区。例如，下面这个程序可将上
+ 文创建的 foo 缓冲区设为当前缓冲区，并通过输出当前缓冲区的名字判断它是否为当前缓
+ 冲区：
+
+#+BEGIN_SRC Elisp
+ (set-buffer "foo")
+ (princ\' (buffer-name))
+#+END_SRC Elisp
+
+ set-buffer 的参数可以是缓冲区的名字，也可以是缓冲区本身。由于
+ generate-new-buffer 能够返回它创建的新缓冲区，因此它可以与 set-buffer 函数复合，
+ 用于创建一个缓冲区并将其设为当前的缓冲区，例如
+
+#+BEGIN_SRC Elisp
+ (set-buffer (generate-new-buffer "foo"))
+#+END_SRC Elisp
+
+ 将上述代码综合一下，可以放在一个名字叫 foo.el 的文本文件里。foo.el 内容为
+
+#+BEGIN_SRC Elisp
+ (defun princ\' (x)
+   (princ x)
+   (princ "\n"))
+
+ (princ\' (buffer-name))
+
+ (set-buffer (generate-new-buffer "foo"))
+ (princ\' (buffer-name))
+#+END_SRC Elisp
+
+ 在终端里，若以 foo.el 所在目录为工作目录，执行
+
+#+BEGIN_SRC Bash
+ $ emacs -Q --script ./foo.el
+#+END_SRC 
+
+ 输出为
+
+#+BEGIN_SRC
+ *scratch*
+ foo
+#+END_SRC
+
+ 这是我写的第二个 Elisp 程序，感觉还不错。
+
+ 
+*** 文件读取
+
+ 对于上一节一开始所提出的问题，事实上并不需要我去为待读取的文件创建一个缓冲区，
+ 并将其设为当前缓冲区。Elisp 提供的 find-file 可以替我完成这项工作。例如，
+
+#+BEGIN_SRC
+ (find-file "foo.txt")
+ (princ\' (buffer-name))
+#+END_SRC
+
+ 所产生的输出为
+
+#+BEGIN_SRC
+ foo.txt
+#+END_SRC
+
+ 这个名曰 foo.txt 的缓冲区，便是 find-file 函数为 foo.txt 文件而创建的。
+
+ 如何确认 foo.txt 文件里的内容真的被读取后存放到 foo.txt 缓冲区呢？可通过
+ buffer-string 函数以字符串的形式获得当前缓冲区存储的数据，然后将所得结果显示于
+ 终端，例如
+
+#+BEGIN_SRC
+ (princ\' (buffer-string))
+#+END_SRC
+
+ 因此，读取 foo.txt 文件里的内容，并将其显示于终端的程序至此便完成了。完整的程序
+ 如下：
+
+#+BEGIN_SRC
+ (defun princ\' (x)
+   (princ x)
+   (princ "\n"))
+
+ (find-file "foo.txt")
+ (princ\' (buffer-string))
+#+END_SRC
+
+ 
+*** 代码风格
+
+ Elisp 代码，只要不破坏名字，它的风格是很随意的。例如 princ\'函数的定义，写成
+
+#+BEGIN_SRC
+ (defun princ\' (x) (princ x) (princ "\n"))
+#+END_SRC
+ 也是可以的。
+
+ 写成
+
+#+BEGIN_SRC
+ (defun
+     princ\'
+     (x)
+   (princ
+    x)(princ
+        "\n"))
+#+END_SRC
+
+ 也不是不行。但是，最好不要写怪异的代码。毕竟，那层层括号的嵌套，人生已经很不容
+ 易了。
+
+ 括号无论是内层的，还是外层的，它们总是成对出现。Lisp 语言最大特点就是，无论是函
+ 数的定义，还是函数的调用，还是其他的一些表达式，在形式上是由括号构成的嵌套结构。
+ 这种结构，Lisp 语言称为列表。
+
+ 如果使用 Emacs 编写 Elisp 代码或其他 Lisp 方言的代码，要记得安装 paredit 包。我
+ 不想浪费时间去讲如何安装和使用这个包。不完全是因为没人给我发稿费，主要是每个人
+ 都应该会用网络搜索引擎。在缓冲区内插入文本
+
+ 无论是用 find-file 函数自动创建的缓冲区，还是基于 generate-new-buffer 创建的缓
+ 冲区，一旦它们被设定为当前缓冲区，便可以使用 Elisp 提供的一些函数，将数据写入其
+ 中。
+
+ insert 函数可将字符串类型的数据写入当前缓冲区，例如：
+
+#+BEGIN_SRC
+ (defun princ\' (s)
+   (princ (concat s "\n")))
+  
+ (find-file "foo.txt")
+ (insert "|||")
+ (princ\' (buffer-string))
+#+END_SRC
+
+ 输出结果为
+
+#+BEGIN_SRC
+ |||Hello world!
+#+END_SRC
+
+ 可见 insert 函数将 ||| 插入到了当前缓冲区存储的文本数据的首部。这是因为，当前缓
+ 冲区内存在这一个不可见的光标，我将其称为插入点，它对应于 Emacs 图形窗口里不断闪
+ 动的那个光标，表示文本的插入点。在使用 find-file 打开一份文件时，插入点会自动定
+ 位在文件的开头，坐标为 1。为了理解插入点，就需要将缓冲区想像成一维数组，存放的
+ 元素为字符，这个一维数组就像一根很长的纸带那样，插入点的坐标就是插入点位于第几
+ 个字符之前。
+
+ point 函数可以获得插入点的坐标。例如
+
+#+BEGIN_SRC
+ (find-file "foo.txt")
+ (princ (point))
+#+END_SRC
+
+ 输出 1。
+
+ goto-char 函数可将插入点移动到缓冲区内的任何位置。例如，倘若将 ||| 插入 Hello
+ world! 的两个单词的中间，只需
+
+#+BEGIN_SRC
+ (find-file "foo.txt")
+ (goto-char 6)
+ (insert "|||")
+#+END_SRC
+
+ 由于函数 point-min 和 point-max 可以获得缓冲区的起止位置，因此可基于它们将插入
+ 点移动到缓冲区的开头或结尾。例如，将 ||| 插入到 Hello world! 的尾部：
+
+#+BEGIN_SRC
+ (find-file "foo.txt")
+ (goto-char (point-max))
+ (insert "|||")
+#+END_SRC
+
+ 在此，也许应该提出一个疑问，为何需要用 point-min 获得缓冲区起始位置？难道这个位
+ 置不是 1 吗？因为在缓冲区内部可以创建更小的局部区域，而它也是 Elisp 的一种数据
+ 类型，它的名字叫 Narrowing。对于位于 Narrowing 区域的文本，也可以用 point-min
+ 和 point-max 获取起止位置，故而 point-min 获得的结果未必是 1。关于 Narrowing，
+ 它在 Emacs 图形界面里较为有用，在使用 Elisp 编写文本处理程序方面，我暂时还没思
+ 考出它的应用场景。在缓冲区内删除文本
+
+ Elisp 函数 delete-char 可以删除插入点之后的字符。例如，以下程序将 foo.txt 读入
+ 缓冲区后，插入点尚在缓冲区起始位置时，删除它后面 5 个字符，
+
+#+BEGIN_SRC
+ (find-file "foo.txt")
+ (delete-char 5)
+#+END_SRC
+
+ Elisp 也提供了一些与插入点位置无关的缓冲区文本删除函数，其中 delete-region 可以
+ 删除落入指定区间的文本。例如，删除缓冲区内第 6 个字符到第 12 个字符之间的字符，
+ 被删除的字符包括前者，但不包括后者，
+
+#+BEGIN_SRC
+ (find-file "foo.txt")
+ (delete-region 6 12)
+#+END_SRC
+
+ 可以使用 (princ\' (buffer-string)) 查看缓冲区内容的变化。
+ 将缓冲区内容写入文件
+
+ 现在，已经基本掌握了从文件读取内容到缓冲区，在缓冲区内写入一些内容，接下来，需
+ 要考虑的一个问题是，缓冲区的内容该如何保存到文件里。保存方式自然有两种，一种是
+ 保存到与当前缓冲区关联的文件，另一种是保存到其他文件。
+
+ save-buffer 可将当前缓冲区保存到与之关联的文件里。例如
+
+#+BEGIN_SRC
+ (find-file "foo.txt")
+ (goto-char (point-max))
+ (insert "|||")
+ (save-buffer)
+#+END_SRC
+
+ 运行上述程序后，可打开 foo.txt 文件查看其内容，是否在 Hello world! 之后多了 |||。
+
+ write-file 可将当前缓冲区保存到其他文件。例如
+
+#+BEGIN_SRC
+ (find-file "foo.txt")
+ (goto-char (point-max))
+ (insert "|||")
+ (write-file "bar.txt")
+#+END_SRC
+
+ 
+*** 结语
+
+ 本章内容虽然较为简单，但是已经隐约触及了 Emacs 的一些本质。倘若理解并熟悉了本文
+ 出现的所有 Elisp 已经提供的函数的用法，相当于掌握了 Emacs 最朴素的功能，即打开
+ 一份文件，添加一些内容，删除一些内容，然后保存，并不需要一个图形界面帮助我们完
+ 成这些事。
+
+ 文中所出现的函数，除 princ\' 之外，我将其他所有函数说成 Elisp 提供的，甚至一度
+ 想将它们称为 Elisp 标准库里的函数。但事实上，Elisp 只是一门语言，而且也不存在这
+ 个标准库。这些函数来自于 Emacs 的核心功能——数量庞大的函数集，分散于众多 Elisp
+ 程序。我将这些函数统称为 Elisp 函数。
+
+ 在 Emacs 里执行默认的键绑定 C-h f，然后输入某个函数名，回车，Emacs 便会打开该函
+ 数的文档。在文档里，函数的用途、参数以及返回结果皆有详细的说明。一开始，看不懂，
+ 也不大要紧，关键是要去看。
+
+** Elisp-02: 文本解析
+
+   本章介绍 Elisp 的变量、列表、符号、函数的递归以及一些更便捷的插入点移动函数。
+这些知识将围绕一个实际问题的解决过程逐步展开。
+
+*** 问题
+
+ 假设有一份文档 foo.md，内容如下：
+
+ #+BEGIN_SRC
+ # Hello world!
+ #+END_SRC
+
+ 下面是 C 语言的 Hello world 程序源文件 hello.c 的内容：
+
+ #+BEGIN_SRC
+ ```
+ #include <stdio.h>
+
+ int main(void) {
+     printf("Hello world!\n")
+     return 0;
+ }
+ ```
+ #+END_SRC
+
+
+ 其中有一部分内容被包含在以 \`\`\` 为开头的两个文本行之间，如何使用 Elisp 编写一
+ 个程序，从 foo.md 中识别它们？
+
+ 注：这个网站的 Markdown 解析器不够健全，无法理解字符转义，导致无法正确显示字符转
+ 义形式出现的三个连续的反引号。
+
+*** 解析器
+ foo.md 文件中每一行文本无非为以下三种情况之一。这三种情况是
+   1. 以 \`\`\` 开头的文本行；
+   2. 位于两个 \`\`\` 开头的文本行之间的文本行；
+   3. 非上述两种情况的文本行。
+
+ 假设我要编写的程序是 simple-md-parser.el，只要它能够判定每一行文本的情况，并将判
+ 定结果记录下来，那么问题便得以解决。这个程序虽然简单，但着实称得上是解析器
+ （Parser）。
+
+*** 变量和列表
+    
+ simple-md-parser.el 对 foo.md 文件每一行文本的判定结果可存储于 Elisp 的列表类型
+ 的变量里。
+
+ 在 Elisp 语言里，变量是绑定到某种类型的数据对象的符号，因而定义一个变量，就是将
+ 一个符号与一个数据对象绑定起来。例如，
+
+ #+BEGIN_SRC
+ (setq x "Hello world!")
+ #+END_SRC
+
+ 将一个符号 x 与一个字符串类型的数据绑定起来，于是便定义了变量 x。
+
+ 列表变量，就是一个符号绑定到了列表类型的实例，后者可由 list 函数创建，例如
+
+ #+BEGIN_SRC
+ (setq x (list 1 2 3 4 5))
+ #+END_SRC
+
+ 将符号 x 绑定到列表对象 (1 2 3 4 5)，于是便定义了一个列表变量 x。
+
+ 也可以定义空列表变量，例如
+
+ #+BEGIN_SRC
+ (setq x '())
+ #+END_SRC
+
+ 单引号 ' 在 Elisp 表示引用。Elisp 解释器遇到它领起的符号或列表时，将后者本身作为
+ 求值结果。这是 Lisp 语言特性之一。通过下面的例子，也许有助于理解这一特性：
+
+ #+BEGIN_SRC
+ (setq x (list 1 2 3 4 5))
+ (princ\' x)
+
+ (setq x '(list 1 2 3 4 5))
+ (princ\' x)
+
+ (setq x '(1 2 3 4 5))
+ (princ\' x)
+ #+END_SRC
+
+ 上述程序的输出为
+
+ #+BEGIN_SRC
+ (1 2 3 4 5)
+ (list 1 2 3 4 5)
+ (1 2 3 4 5)
+ #+END_SRC
+
+ 基于上述程序的输出，可发现
+
+ #+BEGIN_SRC
+ (setq x '(list 1 2 3 4 5))
+ #+END_SRC
+
+ 是将符号 x 绑定到了 (list 1 2 3 4 5) 这个列表，因为代码中的 '(list 1 2 3 4 5) 阻
+ 止了 Elisp 解释器对 (list 1 2 3 4 5) 进行求值，而是直接将改语句本身作为求值结果。
+
+ 还可以看出以下两行代码等价：
+
+ #+BEGIN_SRC
+ (setq x (list 1 2 3 4 5))
+ (setq x '(1 2 3 4 5))
+ #+END_SRC
+
+ 倘若理解了上述内容，就不难理解为何 '() 表示空列表了。
+
+ 
+*** 列表是单向的
+
+ Elisp 的列表是单向的，访问列表首部元素，要比访问其尾部元素容易得多。使用 car 函
+ 数可以获得列表首部元素。例如
+
+ #+BEGIN_SRC
+ (setq x '(1 2 3 4 5))
+ (princ\' (car x))
+ #+END_SRC
+
+ 输出 1。
+
+ cdr 函数可以去掉列表首部元素，将剩余部分作为求值结果。例如
+
+ #+BEGIN_SRC
+ (princ\' (cdr '(1 2 3 4 5)))
+ #+END_SRC
+
+ 输出 (2 3 4 5)。
+
+ 如果要获得列表的尾部元素，就需要使用 cdr 不断砍掉列表首部，直至列表剩下最后一个
+ 元素。好在解决本章开始所提出的问题，并不需要获取列表尾部元素。
+
+ 同访问列表首部和尾部元素类似，向列表的尾部追加元素，要比在列表的首部追加元素困
+ 难得多。Elisp 提供了 cons 函数，可将一个元素添加到列表的首部，然后返回新的列表。
+ 例如
+
+ #+BEGIN_SRC
+ (setq x '(1 2 3 4 5))
+ (setq x (cons 0 x))
+ (princ\' x)
+ #+END_SRC
+
+ 输出 (0 1 2 3 4 5)。
+
+*** 求值
+
+ 从现在开始，我就不再说函数的返回结果了，而是说求值结果，虽然在大多数情况下可以
+ 将它们理解为一回事，但是应当尊重 Lisp 语言的一些术语。
+
+ 上一章含糊地提及，Elisp 程序由 Elisp 解释器解释执行。这个过程具体是怎样进行的呢？
+ 这个过程本质上是由 Elisp 解释器对程序里的每个表达式进行依序求值的过程构成。
+
+ 表达式，也叫块（Form）。在 Elisp 语言里，变量的定义和使用，函数的定义和使用，皆
+ 为表达式。即使一个数字，一个字符串或其他某种类型的一个实例，也是表达式。
+
+ 以下语句，每一行皆为一个表达式：
+
+ #+BEGIN_SRC
+ 42
+ "Hello world!"
+ (setq x 42)
+ (princ\' (buffer-string))
+ #+END_SRC
+
+ 表达式可以嵌套，嵌套结构通常是用成对的括号表达的，例如函数的定义便是典型的嵌套结构：
+
+ #+BEGIN_SRC
+ (defun princ\' (x)
+   (princ x)
+   (princ "\n"))
+ #+END_SRC
+
+ 没错，Elisp 解释器也会对函数的定义求值，求值结果是函数的名字。
+
+ 在 Elisp 解释器看来，任何表达式皆有其值，所以它对 Elisp 程序的解释和执行，本质
+ 上就是对程序里的所有表达式逐一进行求值。
+
+ 需要注意的是，表达式 (princ\' "Hello world!) 的求值结果并非是在终端里输出的
+ Hello world!。一个程序向终端里写入信息，本质上是这个程序向一个文件写入信息。该
+ 工作是 Elisp 解释器在求值过程中的副业，它的主业是对表达式进行求值，求值结果在
+ Elisp 解释器之外不可见。
+
+ 将一个符号绑定到一个数据对象或一组表达式，亦即定义一个变量或函数，在某种意义上
+ 也可以视为 Elisp 解释器的副业。符号
+
+ 现在已经明白了，变量就是一个符号绑定到了某种类型的数据对象。事实上，函数也是类
+ 似的东西。在定义一个函数时，例如
+
+ #+BEGIN_SRC
+ (defun princ\' (x)
+   (princ x)
+   (princ "\n"))
+ #+END_SRC
+
+ 不过是将一个符号 princ\' 绑定到了一组表达式罢了。定义一个函数，本质上是将一个符
+ 号绑定到一个匿名的函数上。这种匿名的函数，叫作 Lambda 表达式。倘若不打算深究这
+ 些知识，也无妨，但是多少应该知道，Lambda 表达式是 Lisp 的精髓之一。
+
+ 符号可以用作变量和函数的名字，但是符号还有一个用途，就是用其本身。由于单引号 '
+ 能够阻止 Elisp 对一个名字做任何解读，只是将这个名字本身作为求值结果，因此通过这
+ 种办法，在程序里可以直接使用符号本身。
+
+ 现在回到本章要解决的问题，还记得 foo.md 文件内的每一行文本只可能是三种情况之一
+ 吗？我可以用符号来表示这三种情况：
+
+ + '开头是三个连续的反引号的文本行
+ + '被包含在开头是三个连续的反引号的两个文本行之间的文本行
+ + '开头不是三个连续的反引号而且也没有被开头是三个连续的反引号的两个文本行包含的
+   文本行
+
+ 不是开玩笑，因为 Elisp 真的支持这么长的符号。但是，符号太长了，写代码也挺累的。
+ 简化一下，上述三种情况简化且进一步细分为以下四种情况：
+
+ + '代码块开始
+ + '代码块
+ + '代码块结束
+ + '未知
+
+ 为什么要将开头是 \`\`\` 的两个文本行之间所包含的文本区域称为「代码块」呢？因为
+ foo.md 文件里的内容其实 Markdown 标记文本。逐行遍历缓冲区
+
+ 似乎一切都走在正确的道路上，到了考虑如何读取 foo.md 文件的每一行文本的时候了。
+
+ 上一章已指出，使用 find-file 函数可将指定文件读取至缓冲区，然后使用 goto-char
+ 函数将缓冲区内的插入点移动到指定位置。Elisp 提供了更大步幅的插入点移动函数
+ forward-line，该函数可将光标移动到当前所在的文本行的后面或前面的文本行的开头。
+ 在缓冲区内，插入点所在的文本行，其首尾的坐标可分别通过 line-beginning-position
+ 和 line-end-position 获得，将它们作为参数值传递于 buffer-substring，便可由后者
+ 获取插入点所在的文本行的内容存入一个字符串对象并将其作为求值结果。简而言之，基
+ 于这几个函数，能够以字符串对象的形式抓取缓冲区内任一行文本。例如，以下程序可抓
+ 取 foo.md 文件的第三行内容：
+#+BEGIN_SRC
+ (find-file "foo.md")
+ (forward-line 2)
+ (princ\' (buffer-substring (line-beginning-position) (line-end-position)))
+#+END_SRC
+
+ 为什么将插入点移动到当前缓冲区的第三行是 (forward-line 2) 呢？这是因为，
+ (find-file "foo.md") 打开文件后，插入点默认是在当前缓冲区第一行的行首。
+ forward-line 函数的参数值是相对于插入点当前所在的文本行的相对偏移行数，从第一行
+ 向后移动 2 行，就是第三行了。forward-line 的参数值也可以为负数，可以让插入点移
+ 动到当前文本行之前的某行。
+
+ 注意，为了方便获取插入点所在的文本行内容，我定义了 current-line 函数：
+
+#+BEGIN_SRC
+ (defun current-line ()
+   (buffer-substring (line-beginning-position) (line-end-position)))
+#+END_SRC
+
+ 倘若定义一个函数，在该函数内部使用 (forward-line 1) 将插入点移动到下一行，然后
+ 再调用该函数自身，便可逐行读取缓冲区内容。例如
+
+#+BEGIN_SRC
+ (defun every-line ()
+   (princ\' (current-line))
+   (forward-line 1)
+   (every-line))
+
+ (find-file "foo.md")
+ (every-line)
+#+END_SRC
+
+ every-line 是递归函数。在一个函数的定义里调用该函数自身，即递归函数。任何一种编
+ 程语言的解释器在遇到递归函数时，会陷入对函数的定义反复进行求值的过程里。递归函
+ 数犹如汽车的发动机，它周而复始的运转。至于汽车可以将人从一个地方载到另一个地方，
+ 不过是发动机的副作用罢了。
+
+ 上述程序的确能逐行将当前缓冲区内容逐行显示出来，但是程序最终会崩溃，临终遗言是
+
+ Lisp nesting exceeds ‘max-lisp-eval-depth’
+
+ 因为在 every-line 函数的定义中，未检测插入点是否移动到缓冲区内容的尽头，递归过
+ 程无法终止，导致 Elisp 解释器一直无法得到求值结果。但是，Elisp 解释器对递归深度
+ 有限制，默认是 800 次，递归深度超过这个限度，解释器便报错而退出。
+ 
+*** 条件表达式
+
+ 如何判断插入点移动到了当前缓冲区的尽头呢？还记得上一章用过的函数 point 吗？它可
+ 以给出插入点的当前坐标。还记得 point-min 和 point-max 吗？它们可以分别给出当前
+ 缓冲区的起止坐标。因此，当 point 的结果与 point-max 的结果相等时，便意味着插入
+ 点到了当前缓冲区的尽头。此刻，欠缺的知识是 Elisp 的条件表达式。
+
+ 在 Elisp 语言里，= 是一个函数，可以用它判断两个数值是否相等。例如
+
+#+BEGIN_SRC
+ (= (point) (point-max))
+#+END_SRC
+
+ 便可判断当前插入点是否到了当前缓冲区的尽头。上述逻辑表达式若成立，求值结果就是
+ t，否则求值结果是 nil。在 Elisp 语言里，符号 t 表示真，nil 表示假。另外，nil 也
+ 等价于 '()，但是我觉得最好还是不要混用。
+
+ 现在差不多明白，为什么 Elisp 定义变量时，不像那些非 Lisp 语言那样，用 =，而是用
+ setq。那些非 Lisp 语言的变量定义语法虽然简洁一些，但是它们牺牲了 = 的意义，因为
+ 在判断两个数值是否相等时，往往使用 == 或其他符号。不要在意我说的，这只是我的幻
+ 想。
+
+ 基于逻辑表达式的求值结果执行相应的程序分支，在 Elisp 语言里可通过 if 表达式。if
+ 表达式的形式如下：
+
+#+BEGIN_SRC
+ (if 逻辑表达式
+     程序分支 1
+   程序分支 2)
+#+END_SRC
+
+ Elisp 解释器对逻辑表达式的求值结果倘若为真，便转而解释执行程序分支 1，否则解释
+ 执行程序分支 2。基于 if 表达式，便可重新定义 every-line 函数了。
+
+#+BEGIN_SRC
+ (defun every-line ()
+   (if (= (point) (point-max))
+       (princ "")
+   (princ\' (current-line))
+   (forward-line 1)
+   (every-line)))
+#+END_SRC
+
+ 这个函数能够如我所愿，在插入点抵达当前缓冲区尽头时，终止递归过程，求值结果是输
+ 出空字符串对象。但是，这个函数的语义却有些混乱，在其定义里，以下四行代码，
+
+#+BEGIN_SRC
+     (princ "")
+     (princ\' (current-line))
+     (forward-line 1)
+     (every-line)))
+#+END_SRC
+
+ 其中哪「程序分支 1」，哪些算是「程序分支 2」呢？Elisp 的语法并不是缩进型语法，
+ 因此上述第一行代码虽然比后面三行代码的缩进更深无助于它有别于后者。为了让语义明
+ 确，需要使用 progn 语法。 *progn 可将一组语句整合到一起，将最后一条语句的求值结
+ 果作为求值结果* 。例如，
+
+#+BEGIN_SRC
+ (defun every-line ()
+   (if (= (point) (point-max))
+       (princ "")
+     (progn 
+       (princ\' (current-line))
+       (forward-line 1)
+       (every-line))))
+#+END_SRC
+
+ 现在，every-line 函数中的条件表达式的语义便很清晰了，无论逻辑表达式的结果是真还
+ 是假，对应的程序分支是一个表达式，而不是多个。
+ 
+*** 字符串匹配
+
+ 现在我有能力获得当前缓冲区里任意一行文本了，但是为了解决本章开始时提出的问题，
+ 还需要判断一行文本是否以 \`\`\` 开头。从每行文本的开头截取 3 个字符，判断它是不
+ 是 \`\`\`，这个小问题便可得以解决。事实上，Elisp 提供了完善的正则表达式，可用于
+ 匹配具有特定模式的文本，但是我现在不打算用它。因为正则表达式有些复杂，甚至需要
+ 为它单独开辟一章。
+
+ substring 函数可从一个字符串对象里截取落入指定范围内的子集并将其作为求值结果。
+
+ 例如
+
+#+BEGIN_SRC
+ (princ\' (substring "天地一指也，万物一马也" 0 4))
+#+END_SRC
+
+ 输出
+
+#+BEGIN_SRC
+ 天地一指
+#+END_SRC
+
+ 判断两个字符串对象的内容是否相同，不能使用 =，应该使用 string=，切记。例如，
+
+#+BEGIN_SRC
+ (string= "Hello" "Hello")
+#+END_SRC
+
+ 求值结果为 t，而
+
+#+BEGIN_SRC
+ (string= "Hello" "World")
+#+END_SRC
+
+ 求值结果为 nil。
+
+ 以下代码可判断插入点所在的文本行的开头是否为 \`\`\`：
+
+#+BEGIN_SRC
+ (string= (substring (current-line) 0 3) "```")
+#+END_SRC
+
+ 便可判断当前文本行是否以 \`\`\` 开头，但是在实际情况里，这个表达式过于乐观了，
+ 因为并不是所有的文本行包含的字符个数多于 3 个，例如 foo.md 文件里有很多空行，这
+ 些空行只包含一个字符 \n，即换行符。在上例中，若当前文本行包含的字符个数少于 3
+ 个，substring 函数便会报错：
+
+ Args out of range: "", 0, 3
+
+ 然后 Elisp 解释器终止工作，程序也就无法再运行下去。若要解决这一问题，就需要特殊
+ 情况特殊处理：
+
+#+BEGIN_SRC
+ (setq x (current-line))
+ (setq y "```")
+ (setq n (length y))
+ (if (< (length x) n)
+     nil
+   (string= (substring x 0 n) y))
+#+END_SRC
+
+ < 也是一个函数，用于比较两个数值的大小。对于表达式 (< a b)，若 a 小于 b，则求值
+ 结果为 t，否则为 nil。length 函数可获得字符串对象的长度，即字符串对象包含的字符
+ 个数。
+
+ length 也可用于获取列表的长度——列表包含的元素个数，例如
+
+#+BEGIN_SRC
+ (length '(1 2 3))
+#+END_SRC
+
+ 求值结果为 3。
+
+***  实现解析器
+
+ 只需综合利用上述的全部知识，便可写出 simple-md-parser.el。下面给出它的全部实现：
+
+#+BEGIN_SRC
+ (defun princ\' (x)
+   (princ x)
+   (princ "\n"))
+
+ (defun current-line ()
+   (buffer-substring (line-beginning-position) (line-end-position)))
+
+ (defun text-match (src dest)
+   (setq n (length dest))
+   (if (< (length src) n)
+       nil
+     (string= (substring src 0 n) dest)))
+
+ (defun every-line (result in-code-block)
+   (if (= (point) (point-max))
+       result
+     (progn
+       (if (text-match (current) "```")
+           (progn
+             (if in-code-block
+                 (progn
+                   (setq result (cons '代码块结束 result))
+                   (setq in-code-block nil))
+               (progn
+                 (setq result (cons '代码块开始 result))
+                 (setq in-code-block t))))
+         (progn
+           (if in-code-block
+               (setq result (cons '代码块 result))
+             (setq result (cons '未知 result)))))
+       (forward-line 1)
+       (every-line result in-code-block))))
+
+ (progn
+   (find-file "foo.md")
+   (princ\' (every-line '() nil)))
+#+END_SRC
+
+ every-line 函数的定义乍看有些复杂，但实际上它所表达的逻辑很简单。对于当前缓冲区
+ 内每一行文本，该函数首先判断它是否以 \`\`\` 开头，倘若是，就需要进一步判断该行
+ 文本的上一行是否在代码块里，然后方能确定当前以 \`\`\` 为开头的文本行是 '代码块
+ 开始，还是'代码块结束。该函数的第二个参数便是用于记录当前文本行的上一行文本是否
+ 属于 '代码块。此外，该函数也展示了作为求值结果的列表 result 如何从一个空列表对
+ 象开始在函数的递归过程中逐步增长。
+
+ 
+*** 列表反转
+
+ 上一节实现的解析器，其中 every-line 函数的求值结果是一个列表对象。这个列表对象
+ 实际上是倒着的，即 foo.md 文件的倒数第一行所属的情况对应于列表对象的第一个元素；
+ 第二行所属情况，对应于列表对象的第二个元素；依此类推。
+
+ 倘若想将这个列表反转过来，需要再写一个函数：
+
+#+BEGIN_SRC
+ (defun reverse-list (x y)
+   (if (null x)
+       y
+     (reverse-list (cdr x) (cons (car x) y))))
+#+END_SRC
+
+ Elisp 函数 null 可用于判断一个列表是否为 '()。
+
+ 这个函数的用法如以下示例：
+
+#+BEGIN_SRC
+ (setq x '(5 4 3 2 1))
+ (princ\' (reverse-list x '()))
+#+END_SRC
+
+ 输出 (1 2 3 4 5)。
+
+ 利用 reverse-list 函数，便可以对上一节实现的 simple-md-parser.el 进一步完善了，
+ 这应该是本章的习题。
+
+ 
+*** 结语
+
+ 本章所实现的 simple-md-parser.el 程序，仅仅是 Elisp 语言的初学者代码，有些繁琐，
+ 甚至也不够安全。在后面三章里，我对这些代码进行了一定程度的简化和完善，并在这些
+ 工作里学习更多的 Elisp 语法和函数。
+** Elisp-03: 变量
+   上一章实现的解析器程序——当然仅仅是玩具，有几处颇为丑陋，还有一处存在着安全问
+   题。
+*** 全局变量
+ 安全第一。先从安全问题开始。观察以下代码：
+#+BEGIN_SRC
+ (defun text-match (src dest)
+   (setq n (length dest))
+   (if (< (length src) n)
+       nil
+     (string= (substring src 0 n) dest)))
+#+END_SRC
+
+ 上述代码定义的这个函数可判断字符串对对象 src 的内容是否以字符串对象 dest 的内容
+ 作为开头，例如
+
+#+BEGIN_SRC
+ (princ\' (text-match "I have a dream!" "I have"))
+#+END_SRC
+
+ 输出 t。这不是问题。问题在于倘若紧接着执行
+
+#+BEGIN_SRC
+ (princ\' n)
+#+END_SRC
+
+ 输出 6。
+
+ 问题是什么呢？在 text-match 这个函数定义的外部，能够访问在函数的定义内部的一个
+ 变量，宛若他人的手指可以触及我的内脏……这是不是一个安全问题？
+
+ 这种匪夷所思的现象之所以出现，是因为 setq 定义的变量是全局变量。在一个程序里，
+ 倘若有一个全局变量，那么在这个程序的任何一个角落皆能访问和修改这个变量。
+
+ 全局变量不可以没有，但不可滥用。对于 text-match 这样的函数，在其定义里使用全局
+ 变量，属于滥用。局部变量
+
+ 回忆一下 simple-md-parser.el 里的代码里 every-line 函数的定义：
+
+#+BEGIN_SRC
+ (defun every-line (result in-code-block)
+   (if (= (point) (point-max))
+       result
+     (progn
+       (if (text-match (current) "```")
+           (progn
+             (if in-code-block
+                 (progn
+                   (setq result (cons '代码块结束 result))
+                   (setq in-code-block nil))
+               (progn
+                 (setq result (cons '代码块开始 result))
+                 (setq in-code-block t))))
+         (progn
+           (if in-code-block
+               (setq result (cons '代码块 result))
+             (setq result (cons '未知 result)))))
+       (forward-line 1)
+       (every-line result in-code-blcok))))
+#+END_SRC
+
+ 在这个函数里，我在多处用 setq 反复定义了两个变量 result 和 in-code-block，但是
+ 倘若调用这个函数之后再执行以下程序
+
+#+BEGIN_SRC
+ (princ\' result)
+ (princ\' in-code-block)
+#+END_SRC
+
+ Elisp 解释器在对 (princ\' result) 进行求值时会出错，它会抱怨：
+
+ Symbol’s value as variable is void: result
+
+ 意思是，result 这个变量未被定义。为什么会这样呢？
+
+ 原因是它们也都是函数的参数，在函数定义的内部可以访问和修改它们，而在函数定义的
+ 外部却不能。因此，函数的参数是局部变量。
+
+ Elisp 语言以及其他 Lisp 方言，正是基于函数的参数构造了局部变量，并且为了简化构
+ 造过程，提供了 let 表达式。
+
+ let 表达式可以初始化局部变量，并将限定其生存范围。例如
+
+#+BEGIN_SRC
+ (let ((a 1)
+       (b "Hello")
+       (c '世界))
+   (princ\' a)
+   (princ\' b)
+   (princ\' c))
+#+END_SRC
+
+ 可定义三个局部变量 a，b 和 c，它们仅在 let 表达式内部有效——可以使用，也可以修改。
+
+ 使用 let 表达式，可以让不安全的 text-match 函数规矩一些：
+#+BEGIN_SRC
+ (defun text-match (src dest)
+   (let ((n (length dest)))
+     (if (< (length src) n)
+         nil
+       (string= (substring src 0 n) dest))))
+#+END_SRC
+
+ 现在，倘若再执行
+
+#+BEGIN_SRC
+ (princ\' (text-match "I have a dream!" "I have"))
+ (princ\' n)
+#+END_SRC
+
+ Elisp 解释器在对 (princ\' n) 求值时会抱怨变量 n 未定义，然后终止。
+
+ 在 let 表达式里，也可以不对局部变量进行初始化。例如
+
+#+BEGIN_SRC
+ (let (a b c)
+   (princ\' a)
+   (princ\' b)
+   (princ\' c))
+#+END_SRC
+
+ 结果输出：
+
+ nil
+ nil
+ nil
+
+ 未进行初始化的局部变量，Elisp 解释器会认为它们的值是 nil。
+*** 美颜
+
+ 局部变量不仅能让函数更为安全，甚至对函数的定义和调用也能产生一些美容效果。
+
+ simple-md-parser.el 里定义的 every-line 函数，其调用形式是
+
+ (every-line '() nil)
+
+ 需要给它两个初始的参数值，它方能得以运行。虽然它能正确地解决问题，但是却不美观，
+ 犹如一件电器，它能正常工作，只是有两个线头露在了外面。基于 let 表达式，在函数的
+ 定义可以去掉这两个参数。例如：
+
+#+BEGIN_SRC
+ (let ((result '())
+       (in-code-block nil))
+   (defun every-line ()
+     (if (= (point) (point-max))
+         result
+       (progn
+         (if (text-match (current) "```")
+             (progn
+               (if in-code-block
+                   (progn
+                     (setq result (cons '代码块结束 result))
+                     (setq in-code-block nil))
+                 (progn
+                   (setq result (cons '代码块开始 result))
+                   (setq in-code-block t))))
+           (progn
+             (if in-code-block
+                 (setq result (cons '代码块 result))
+               (setq result (cons '未知 result)))))
+         (forward-line 1)
+         (every-line))))
+   (every-line))
+#+END_SRC
+
+ 上述代码由于略微复杂，导致程序结构不够清晰，倘若隐去一些代码，便清楚得多。例如
+
+#+BEGIN_SRC
+ (let ((result '())
+       (in-code-block nil))
+   (defun every-line ()
+     ... 省略的代码 ...)
+   (every-line))
+#+END_SRC
+
+ 所表达的主要含义是：在 let 表达式里定义了函数 every-line，然后调用该函数。注意
+ 观察，此时，该函数是没有任何参数。
+
+ 不过，将函数的定义放到 let 表达式内，这个函数会被 Elisp 就地求值了。倘若依然希
+ 望它保持函数的尊严，而不是每次使用它都要背负一个冗长的 let 表达式，只需将整个
+ let 表达式封装为一个函数即可。例如
+
+#+BEGIN_SRC
+ (defun every-line\' ()
+   (let ((result '())
+         (in-code-block nil))
+     (defun every-line ()
+       ... 省略的代码 ...)
+     (every-line)))
+#+END_SRC
+
+ 上述代码不仅彰显了可以在 let 表达式里定义一个函数，也彰显了可以在一个函数的定义
+ 里定义一个函数。不过，我认为内外两个函数的名字最好换一下，即
+
+#+BEGIN_SRC
+ (defun every-line ()
+   (let ((result '())
+         (in-code-block nil))
+     (defun every-line\' ()
+       ... 省略的代码 ...)
+     (every-line\')))
+#+END_SRC
+
+ 现在，我觉得美观多了。因为 simple-md-parser.el 的最后两行代码，现在可以写成
+
+#+BEGIN_SRC
+ (find-file "foo.md")
+ (princ\' (every-line))
+#+END_SRC
+
+ 对于上一章实现的列表反转函数也可以采用类似的办法予以美化。例如
+
+#+BEGIN_SRC
+ (defun reverse-list (x)
+   (let ((y '()))
+     (defun reverse-list\' ()
+       (if (null x)
+           y
+         (progn
+           (setq y (cons (car x) y))
+           (reverse-list\' (cdr x)))))
+     (reverse-list\')))
+#+END_SRC
+
+ 如此，之前的代码
+
+#+BEGIN_SRC
+ (setq x '(5 4 3 2 1))
+ (princ\' (reverse-list x '()))
+#+END_SRC
+
+ 现在可写成
+
+#+BEGIN_SRC
+ (setq x '(5 4 3 2 1))
+ (princ\' (reverse-list x))
+#+END_SRC
+*** 结语
+
+ 局部变量可让程序更安全，也更优雅。
+** Elisp-04: 迭代
+迭代，亦称循环，表示一段重复运行的程序，其状态可在每次重复运行的过程中发生变化。
+
+基于递归函数可以模拟迭代过程。例如以下程序
+#+BEGIN_SRC
+(defun princ\' (x)
+  (princ x)
+  (princ "\n"))
+
+(defun current-line ()
+  (buffer-substring (line-beginning-position) (line-end-position)))
+
+(defun every-line ()
+  (if (= (point) (point-max))
+      (princ "")
+    (progn 
+      (princ\' (current-line))
+      (forward-line 1)
+      (every-line))))
+
+(progn
+  (find-file "foo.md")
+  (every-line))
+#+END_SRC
+
+Elisp 解释器在上述程序最后一个表达式 (every-line) 求值时，会转而对 every-line 函
+数定义里的每个表达式进行求值，但是当 Elisp 解释器在函数 every-line 的定义里又遇
+到了表达式 (every-line)，导致它不得不再次对 every-line 的定义里的每个表达式进行
+求值。该过程周而复始，在每一次反复对 every-line 的定义进行求值时，princ\' 会不断
+输出当前文本行，而 forward-line 又不断将插入点移动到下一行的开头。于是，上述程序
+便解决了读取当前缓冲区内的每一行文本并输出于终端这个问题。
+
+我们活着，也是递归吧。如同我们有寿命一样，Elisp 对函数的递归深度也有限度。
+every-line 这个函数，最多只能令 Elisp 解释器反复对其求值 max-lisp-eval-depth 次。
+`
+
+max-lisp-eval-depth 是 Elisp 解释器的全局变量，它定义了函数递归深度。使用
+
+(princ\' max-lisp-eval-depth)
+
+可查看它的值，在我的机器上，结果 800，这意味着上述的 every-line 函数只能令 Elisp
+解释器反复对其求值 800 次。这也意味着，倘若当前缓冲区内的文本行数超过 800 行时，
+every-line 函数的定义会令 Elisp 解释器因崩溃而终止工作。它的临终遗言是
+
+Lisp nesting exceeds ‘max-lisp-eval-depth’
+
+理论上，倘若 Elisp 解释器能够对类似 every-line 这种尾部递归形式的函数予以优化，
+便可让自己用无休止地陷入对 every-line 的定义进行求值的过程中。这种优化，叫作尾递
+归优化。
+
+不过，Elisp 解释器没有尾递归优化的功能，所以它必须提供迭代语法。Elisp 编程时最常
+用的迭代语法是 while 表达式，用法如下
+
+#+BEGIN_SRC
+(while 逻辑表达式
+  一段程序)
+#+END_SRC
+
+若逻辑表达式的求值结果为 t，Elisp 便会反复执行 while 表达式里的那段程序，否则，
+Elisp 解释器会将 nil 作为求值结果，结束对 while 表达式的求值。这意味着 while 表
+达式的求值结果要么是 nil，要么是 Elisp 解释器永无休止对其进行求值的过程。事实上，
+while 表达式的求值结果是什么，并不重要，重要的是它的内部如何表达程序运行状态的变
+化及程序的响应。
+
+基于 while 语法，可将上述 every-line 函数重新定义为
+
+#+BEGIN_SRC
+(defun every-line ()
+  (while (< (point) (point-max))
+    (princ\' (current-line))
+    (forward-line 1)))
+#+END_SRC
+
+现在，不再担心因当前缓冲区行数过多的情况了，除非内存不够用，而且 every-line 的定
+义也更为简洁了。一箭双雕，但是倘若我不先用递归函数模拟一下迭代过程，就很难有此刻
+愉悦的心情。
+
+同理，上一章重新定义列表反转函数
+
+#+BEGIN_SRC
+(defun reverse-list (x)
+  (let ((y '()))
+    (defun reverse-list\' (x)
+      (if (null x)
+          y
+        (progn
+          (setq y (cons (car x) y))
+          (reverse-list\' (cdr x)))))
+    (reverse-list\' x)))
+#+END_SRC
+
+也可以改写为 while 版本：
+
+#+BEGIN_SRC
+(defun reverse-list (x)
+  (let ((y '()))
+    (while (not (null x))
+      (setq y (cons (car x) y))
+      (setq x (cdr x)))
+    y))
+#+END_SRC
+
+其中，not 是 Elisp 的逻辑取反函数。需要注意的是，上述代码中，局部变量 y 出现在函
+数定义的最后，它就是函数的求值结果。因为，y 也是 S 表达式，Elisp 可对其进行求值。
+倘若上述函数定义里的最后一行没有 y，那么 while 表达式的求值结果 nil 便是函数的求
+值结果。
+
+有了迭代，那么递归函数还有必要再使用吗？
+
+有必要。
+
+一些树形结构的创建和遍历，例如二叉树或多叉树，用递归函数，不仅自然，而且代码也非
+常简洁，再者通常也无需担心递归深度的限制。以高度平衡二叉树为例，默认值为 800 的
+max-lisp-eval-depth 足够了，因为叶结点数量高达 $2^{800}$ 的高度平衡二叉树几乎不
+可能具有现实意义。
+
+最后记住一句话吧，迭代是线性的递归。
+
+** Elisp-05: 文本匹配
+在第二章「文本解析」所实现的解析器程序里，为了判断一行文本是否以 \`\`\` 开头，我
+定义了一个函数：
+#+BEGIN_SRC
+(defun text-match (source target)
+  (setq n (length target))
+  (if (< (length source) n)
+      nil
+    (string= (substring source 0 n) target)))
+#+END_SRC
+
+事实上，Elisp 提供了更强大的文本匹配函数。如何的强大呢？强大到了支持正则表达式匹
+配。
+
+正则表达式，就像古代官府捉拿江洋大盗时在城门边上张贴的通缉告示上的罪犯画像。罪犯
+的长相越有特点，他的画像便越有用处。我还觉得现代的机器学习程序在识别照片里的人脸，
+其原理也像是在城门边上张贴通缉告示。
+
+如何给一段文本画像呢？具体而言，如何给以 \`\`\` 作为开头的文本画像呢？很简单，只
+要像下面这样画
+
+#+BEGIN_SRC
+^```
+#+END_SRC
+
+^ 的意思是「开头」，后面紧跟着 \`\`\`，就表示开头是 \`\`\`。
+
+Elisp 的 string-match 函数可以用正则表达式构成的字符串对象去匹配另一个字符串对象，
+例如：
+
+#+BEGIN_SRC
+(string-match "^```" "```lisp")
+#+END_SRC
+
+注意，为了便于讲述，从现在开始，诸如字符串对象（或字符串类型的实例），列表对象
+（或列表类型的实例），若没有特殊声明，统统简称为字符串、列表。应该不会导致误解。
+
+上述示例中，由于字符串 "\`\`\`lisp" 是以 \`\`\` 开头的，所以 string-match 的求值
+结果不是 nil，否则是 nil。对于 Elisp 解释器而言，非 nil 即为真，亦即若一个值即不
+是 nil，也不是 '()，那么无论它是什么，Elisp 都会将其等价于 t。还记得吗，之前说过
+的，nil 与 '() 等价。要牢记住这些。事实上，上例的求值结果是 0，但 0 即不是 nil
+也不是 '()。
+
+为什么上例的求值结果是 0 呢？因为 string-match 在字符串的开头就找到了与正则表达
+式相匹配的部分。字符串的开头，亦即字符串第一个字符的索引（或下标），它的值是 0。
+再看一个例子：
+
+#+BEGIN_SRC
+(setq r "```")
+(setq x "foo```bar")
+(string-match r x)
+#+END_SRC
+
+此时，string-match 是判断字符串 x 中是否存在与正则表达式 r 相匹配的文本，求值结
+果是匹配的文本的第一个字符的索引。由于在 x 里， \`\`\` 的首字符的索引是 3，所以
+上例里 string-match 的求值结果就是 3。这个求值结果的含义是，符合正则表达式 r 的
+的文本在 x 的第 4 个字符位置开始出现。
+
+下面的这个例子，
+
+#+BEGIN_SRC
+(setq r "```$")
+(setq x "foo```")
+(string-match r x)
+#+END_SRC
+
+可以判断 x 是否以 \`\`\` 结尾。在正则表达式里，$ 表示文本的结尾。
+
+猜一下，^\`\`\`$ 是什么意思？猜中了，虽然没有奖励，但可以确定自己并不笨。
+
+现在，第二章的解析器程序里有关文本匹配的功能，便可以使用 string-match 代替了。至
+此，与该解析器有关的知识，均已普及。它所解决的问题，现在已不是问题了。我需要发现
+新的问题。
+
+新的问题还是在 foo.md 文件里。下面仅给出它的部分内容：
+
+# Hello world!
+
+下面是 C 语言的 Hello world 程序源文件 hello.c 的内容：
+
+#+BEGIN_SRC
+```
+#include <stdio.h>
+... ... ...
+```
+
+... ... ...
+#+END_SRC
+
+其中，# Hello world! 是文档小节的标题。使用正则表达式 ^# 可以匹配它，但是抄录环
+境里也有以 # 开头的文本行。现在是不是有一些明白了，为什么从第二章到现在，我对
+\`\`\` 开头的文本行如此有执念了吧？只有先识别出抄录环境，将它们忽略，方有足够的
+可能匹配文档小节的标题。至于如何忽略抄录环境里的文本，现在且放下。只需要记得，现
+在有了一个新的问题，而且接下来我也不知道还需要用几章能彻底解决它。
+
+在忽略抄录环境的前提下，使用 ^# 可以匹配文档小节标题，但是它太粗糙了。因为，文档
+小节标题的真实样子可以是以下几种
+
+#+BEGIN_SRC
+# 标题
+#  标题
+#            标题
+#+END_SRC
+
+亦即，# 和标题的名字之间至少要有 1 个空格。此外，标题的名字之后也允许出现空格，
+比如输入标题时，不小心引入的。因此，对于匹配文档小节标题而言，更精确一些的正则表
+达式是
+
+#+BEGIN_SRC
+^#[[:blank:]]+.+$
+#+END_SRC
+
+其中，[[:blank:]] 可匹配空白字符，它涵盖了空格。+ 表示位于它前面的字符可能存在 1 个
+或更多个。* 表示位于它前面的字符可能不存在，也可能存在 1 个或更多个。. 可匹配任
+意一个字符。因此 [[:blank:]]+ 可匹配 1 个或更多个空格，.+ 可匹配 1 个或更多个字符，
+而 [[:blank:]]* 可匹配 0 个，1 个或更多个空格。使用这个正则表达式，便可更为稳准地匹
+配文档小节标题了，例如：
+
+#+BEGIN_SRC
+(setq x "#                    Hello world!             ")
+(setq r "^#[[:blank:]]+.+[[:blank:]]*$")
+(string-match r x)
+#+END_SRC
+
+string-match 的求值结果为 0，是正确的。现在可以思考，倘若自行定义一个类似功能的
+文本匹配函数，其工作量，以我现在的 Elisp 编程技能以及对 NFA（不确定的有穷自动机）
+的了解程度，不敢估计。
+
+正则表达式不仅仅用于匹配，也能用于文本捕获。例如，从上述示例里的字符串 x 中捕获
+文档小节标题名 Hello world!，对应的正则表达式应当写为
+
+#+BEGIN_SRC
+(setq r "^#[[:blank:]]+\\(.+\\)[[:blank:]]*$")
+#+END_SRC
+
+亦即，在正则表达式中使用 \\( 和 \\) 将要捕获的文本对应的正则表达式段 .+ 包含起来。
+string-match 使用这个正则表达式进行文本匹配时，会将 \\( 和 \\) 包含的 .+ 匹配到
+的文本段保存下来，需使用 (match-string 1) 提取。例如
+
+#+BEGIN_SRC
+(setq x "#                    Hello world!             ")
+(setq r "^#[[:blank:]]+\\(.+\\)[[:blank:]]*$")
+(string-match r x)
+(princ\' (match-string 1 x))
+#+END_SRC
+
+上述程序输出 Hello world!。
+
+match-string 的第 1 个参数是正则表达式中 \\(...\\) 的序号。因为一个正则表达式里
+可以有多处 \\(..\\))，因此需在 match-string 中指定要获取的文本是哪一处 \\(...\\)
+捕获的。
+
+下面这个程序使用了两处正则表达式捕获
+
+#+BEGIN_SRC
+(setq x "############                    Hello world!             ")
+(setq r "^\\(#+\\)[[:blank:]]+\\(.+\\)[[:blank:]]*$")
+(string-match r x)
+(princ\' (match-string 1 x))
+(princ\' (match-string 2 x))
+#+END_SRC
+
+输出：
+
+############
+Hello world!
+
+以上所述的仅仅是正则表达式的一些基本知识，因为当前的主要问题是如何在 Elisp 程序
+中使用正则表达式匹配文本。至于正则表达式本身的更多知识，可以在遇到实际问题时，临
+时抱抱佛脚。
+
+** Elisp-06: 缓冲区变换
+在第一章「Hello world!」和第二章「文本解析」里已初步介绍了缓冲区的基本知识。使用
+Elisp 语言编写文本处理程序时，充分利用缓冲区，似乎是着实是在发挥 Elisp 的一项长
+处。因而本章要思考和解决的一个现实问题是，缓冲区可以用来做什么。
+
+*** 文本变换
+
+ 将文本由一种形式变换为另一种形式，在「物理」上，可体现为一个字符串变换为另一个
+ 字符串，也可体现为一个文件变换为另一个文件。这是其他编程语言里常见的想法，而
+ Elisp 语言提供了一个新的思想，文本变换可以体现为缓冲区变换。
+
+ 为什么要进行文本变换呢？因为人类总希望用更少的语言去讲更多的话。
+
+ 例如，假设有一份文件 foo.md，其内容为
+
+#+BEGIN_SRC
+ # 今天要整理厨房
+#+END_SRC
+
+ 我在一份 Elisp 教程里提醒自己，今天一定要整理厨房……
+
+ 现在我想将上述内容变换为
+
+#+BEGIN_SRC
+ <h1>今天要整理厨房</h1>
+
+ <p>我在一份 Elisp 教程里提醒自己，今天一定要整理厨房……</p>
+#+END_SRC
+
+ 完成这样的变换，前面几章所述的 Elisp 语法和函数已经足够用了。
+ 
+*** 算法设计
+
+ 要解决上一节所述的文本变换问题，首先需要设计一个有针对性的算法。这个算法自然是
+ 很简单的，简单到了任何一本以教授算法为宗旨的教科书都不愿涉及的程度。
+
+ 假设 x 为 foo.md 文件里的任意一行文本，对于上一节提出的问题一样，它只可能属于以
+ 下三种情况之一：
+
+#+BEGIN_SRC
+     ^#+[[:blank:]]+.+$；
+     ^[[:blank:]]*$；
+     不属于上述两种情况的情况。
+#+END_SRC
+
+ 还记得上一章所讲的正则表达式吗？上述第一种情况，就是以一个或多个 # 开头且 # 之
+ 后可以有一个或多个空格的文本行。第二种情况是空行。
+
+ 只需基于上述三种情况，对 x 进行变换。
+  + 第一种情况，将 x 变为 <hn>...</hn> 的形式，n 为 # 的个数。
+  + 第二种情况，将 x 变换为空字符串。
+  + 第三种情况，则在 x 的开头和结尾增加 <p> 和 </p>。如此，问题便得以解决。下文
+    将逐步实现这个算法。
+*** 文本变换函数
+
+ 为一个具体的问题设计一个具体的算法，我认为，这相当于是要站在一个高处对问题的俯
+ 瞰。算法设计出来之后，在着手实现算法时，我建议这个过程应当自下而上进行。因为底
+ 层的逻辑是最简单的。
+
+ 在实现「### foo」到「<h3>foo</h3>」的变换时，为了追求简单，我甚至可以假设已经将
+ 前者拆分为「###」和「foo」两个部分了，然后只需要根据前者包含的了多少个 #，便可
+ 以确定 <hn>...</hn> 里的 n 是多少了。于是，上一节里第一种情况的变换，其实现如下：
+
+#+BEGIN_SRC
+ (defun section-n (level name)
+   (let ((n (length level)))
+     (format "<h%d>%s</h%d>" n name n)))
+#+END_SRC
+
+ 其中，Elisp 函数 length 函数在第二章里已经用过，它可以算出字符串包含多少个字符，
+ 也可以算出列表包含多少个元素。Elisp 函数 format 是第一次使用，该函数可以构造一
+ 个字符串模板，然后特定类型的变量或数据对象的求值结果填充到模板里，从而生成一个
+ 字符串。如果学过 C 语言，对这种构造字符串的方法一定不陌生，因为 C 语言里常用的
+ printf 便是类似的函数。
+
+ section-n 的用法示例如下：
+
+#+BEGIN_SRC
+ ;;(section-n "###" "#foo") --> 应该修改如下行
+ (section-n "###" "#foo")
+#+END_SRC
+
+ 求值结果为字符串 "<h3>foo</h3>"。倘若不放心，就使用之前章节里定义的 princ\' 函
+ 数，将结果在终端里显现出来：
+
+#+BEGIN_SRC
+ ;;(princ\' (section-n "###" "#foo")) --> 应该修改如下行
+ (princ\' (section-n "###" "foo"))
+#+END_SRC
+
+ 这是最后一次如此罗嗦。
+
+ 上一节的三种情况里，后两种情况对应的文本变换更为简单，下面直接给出，不再讲解了。
+
+#+BEGIN_SRC
+ (defun empty-line (text) "")
+
+ (defun paragraph (text)
+   (format "<p>%s</p>" text))
+#+END_SRC
+*** 读一行，变换一行
+
+ 现在，可以打开 foo.md 文件，将其内容读取到缓冲区了。所需代码，在第二章便已给出，
+ 亦即
+
+#+BEGIN_SRC
+ (find-file "foo.md")
+#+END_SRC
+
+ find-file 过程结束后，当前缓冲区的名字是 foo.md，其中存放的是 foo.md 文件的全部
+ 内容，且插入点位于缓冲区首部，亦即坐标为 1。
+
+ 逐行读取缓冲区内容的过程，一开始在第二章我是使用递归函数实现的，后来在第四章里，
+ 将递归函数改写成了迭代形式：
+
+#+BEGIN_SRC
+ (defun current-line ()
+   (buffer-substring (line-beginning-position) (line-end-position)))
+
+ (defun every-line ()
+   (while (< (point) (point-max))
+     (princ\' (current-line))
+     (forward-line 1)))
+#+END_SRC
+
+ 要实现对当前缓冲区内容的变换，可将文本匹配和变换过程嵌入上述的 every-line 函数
+ 的定义里，但是我想做的更优雅一些。
+
+ 首先，将文本匹配和变换过程定义为一个函数
+
+#+BEGIN_SRC
+ (defun translate (text)
+   (if (string-match "^\\(#+\\)[[:blank:]]+\\(.+\\)$" text)
+       (section-n (match-string 1 text) (match-string 2 text))
+     (if (string-match "^$" text)
+         (empty-line text)
+       (paragraph text))))
+#+END_SRC
+
+ Elisp 并未提供类似其他编程语言里 if ... else if ... else 这种条件表达式，因此上
+ 述代码是基于嵌套的 if ... else ... 表达式实现了三种情况的文本匹配及变换。
+
+ 不过，Elisp 提供了 cond 表达式，它的逻辑与 if ... else if ... else 等价，可用于
+ 消除 if ... else ... 表达式嵌套。cond 表达式的结构如下：
+
+#+BEGIN_SRC
+ (cond
+  (逻辑表达式 1
+   程序分支 1)
+  (逻辑表达式 2
+   程序分支 2)
+  (...
+   ...))
+#+END_SRC
+
+ 基于 cond 表达式，可将 translate 函数重新定义为：
+
+#+BEGIN_SRC
+ (defun translate (text)
+   (cond
+    ((string-match "^\\(#+\\)[[:blank:]]+\\(.+\\)$" text)
+     (section-n (match-string 1 text) (match-string 2 text)))
+    ((string-match "^$" text)
+     (empty-line text))
+    (t (paragraph text))))
+#+END_SRC
+
+ 然后在 every-line 函数里调用 translate 便可对缓冲区内容逐行予以变换，即
+
+#+BEGIN_SRC
+ (defun every-line ()
+   (while (< (point) (point-max))
+     (translate (current-line))
+     (forward-line 1)))
+#+END_SRC
+
+ 倘若在 every-line 函数的定义里，使用 princ\' 将文本变换结果逐行输出到终端，可以
+ 查看变换过程是否正确。例如
+
+#+BEGIN_SRC
+ (defun every-line ()
+   (while (< (point) (point-max))
+     (princ\' (translate (current-line)))
+     (forward-line 1)))
+#+END_SRC
+
+ 但是，如果我想将变换后的文本保存到另一个缓冲区里，该如何实现呢？
+*** 另一个缓冲区
+
+ 首先，肯定是创建一个新的缓冲区，它可以叫 html，且可与符号 html-buffer 绑定，成
+ 为一个变量的值。我将这件事放在 foo.md 文件被打开之后进行，亦即
+
+#+BEGIN_SRC
+ (find-file "foo.md")
+ (setq html-buffer (generate-new-buffer "html"))
+#+END_SRC
+
+ 然后在 every-line 函数里，将当前缓冲区切换为 other 缓冲区，插入变换后的文本，再
+ 将当前缓冲区切回，继续进行下一行文本的变换和保存。于是，every-line 函数定义里的
+ 迭代过程可描述为
+
+#+BEGIN_SRC
+ (while (< (point) (point-max))
+   (setq text (translate (current-line)))
+   (setq md-buffer (current-buffer))
+   (set-buffer html-buffer)
+   (insert (concat text "\n"))
+   (set-buffer md-buffer)
+   (forward-line 1))
+#+END_SRC
+
+ 上述代码使用了 Elisp 函数 concat，它可以将多个字符串连接成一个字符串。
+
+ 在上述代码里，当前缓冲区每次向 html-buffer 缓冲区切换之前，我已使用变量 text 和
+ md-buffer 已分别将变换后的文本以及当前缓冲区记了下来，故而在 html-buffer 为当前
+ 缓冲区时，能够插入 text 的值，且能通过 (set-buffer md-buffer) 将当前缓冲区切回。
+ 由于这样的缓冲区切换操作较为繁琐，因此 Elisp 提供了一个更方便的函数
+ with-current-buffer，可在维持当前缓冲区不变的情况下，将数据写入另一个给定的缓冲
+ 区。该函数的用法如下：
+
+#+BEGIN_SRC
+ (with-current-buffer 缓冲区或缓冲区的名字
+   一组表达式)
+#+END_SRC
+
+ 基于这个函数，上述迭代过程可改写为
+
+#+BEGIN_SRC
+ (while (< (point) (point-max))
+   (setq text (translate (current-line)))
+   (with-current-buffer html-buffer
+     (insert (concat text "\n")))
+   (forward-line 1))
+#+END_SRC
+
+ 不过，上述代码里定义了一个全局变量 text，不够安全，可使用 let 表达式将其变为局
+ 部变量：
+
+#+BEGIN_SRC
+ (let (text)
+   (while (< (point) (point-max))
+     (setq text (translate (current-line)))
+     (with-current-buffer html-buffer
+       (insert text)
+       (insert "\n"))
+     (forward-line 1))))
+#+END_SRC
+
+ 但是，不幸的是，上述代码里还有一个全局变量 html-buffer，它凭空就出现了，就像神
+ 迹一样。
+
+ 真的有神迹吗？从函数的角度来看，这个神迹完全可以转化为一个参数，于是，就有了一
+ 个可将当前缓冲区内容逐行变换到另一个缓冲区的函数了，即
+
+#+BEGIN_SRC
+ (defun every-line-in-current-buffer-to-other-buffer (target)
+   (let (text)
+     (while (< (point) (point-max))
+       (setq text (translate (current-line)))
+       (with-current-buffer target
+         (insert (concat text "\n"))
+       (forward-line 1))))
+#+END_SRC
+*** 缓冲区变换
+
+ 上一节末尾定义的那个函数，它的名字太长了。任何很长的名字，都可以通过修辞将其变
+ 得简短。修辞的基础是在宏观的角度上理解待修辞的对象。站在宏观的角度来看这个函数，
+ 无论它是怎样运作的，它的工作无非是将一个缓冲区里的东西变换到另一个缓冲区，那么
+ 可将这个过程修辞为缓冲区变换，用英文来写，可表示为 translate-buffer，无论它是将
+ 当前缓冲区内容变换到另一个缓冲区，还是将任意一个给定的缓冲区内容变换到另一个缓
+ 冲区，这样的过程皆可定义为
+
+#+BEGIN_SRC
+ (defun translate-buffer (source target)
+   (with-current-buffer source
+     (let (text)
+       (while (< (point) (point-max))
+         (setq text (translate (current-line)))
+         (with-current-buffer target
+           (insert (concat text "\n"))
+         (forward-line 1)))))
+#+END_SRC
+
+ 基于 translate-buffer，将缓冲区 foo.md 中的内容变换另一个缓冲区的完整示例可写为：
+
+#+BEGIN_SRC
+ (find-file "foo.md")
+ (setq html-buffer (generate-new-buffer "html"))
+ (translate-buffer ((current-buffer) html-buffer))
+#+END_SRC
+
+ 基于 let 表达式，可以消除掉全局变量 html-buffer 并且可将程序进一步简化，例如
+
+#+BEGIN_SRC
+ (let ((html-buffer (generate-new-buffer "html")))
+   (translate-buffer (find-file "foo.md") html-buffer))
+#+END_SRC
+
+ 没错，(find-file "foo.md") 的求值结果是缓冲区，因此它可以作为 translate-buffer
+ 的参数值。
+*** 将变换结果保存为文件
+
+ 倘若在完成缓冲区变换后，想查看缓冲区 html-buffer 的内容，可以再使用一次
+ with-current-buffer 表达式，即
+
+#+BEGIN_SRC
+ (let ((html-buffer (generate-new-buffer "html")))
+   (translate-buffer (find-file "foo.md") html-buffer)
+   (with-current-buffer html-buffer
+     (princ\' (buffer-string))))
+#+END_SRC
+
+ 也可将 html-buffer 的内容保存为文件 foo.html，还记得第二章提到的 write-file 函
+ 数吗？但是，不推荐使用它，因为它是面向 Emacs 图形界面的，工作比较多，导致运行起
+ 来有些慢吞吞的。比它更快且更为底层的函数是 write-region，它可以通过第一个参数和
+ 第二个参数，将当前缓冲区的一个局部区域写入指定文件。倘若 write-region 的第一个
+ 参数为 nil，那么无论第二个参数值是什么，它会将当前缓冲区的全部内容写入指定文件。
+
+ 以下代码实现了缓冲区变换和文件保存过程：
+
+#+BEGIN_SRC
+ (let ((html-buffer (generate-new-buffer "html")))
+   (translate-buffer (find-file "foo.md") html-buffer)
+   (with-current-buffer html-buffer
+     (write-region nil nil "foo.html")))
+#+END_SRC
+*** 结语
+
+ 缓冲区也许是 Elisp 语言里也许是最为重要的数据类型了。虽然 Elisp 没有 Scheme 语
+ 言的 call/cc，但是它有 with-current-buffer。我甚至隐约觉得，用 Elisp 语言编程，
+ 基于缓冲区类型，可以开辟一个其他编程语言所没有的范式，面向缓冲区编程。
+
+ 在本章示例里，要编译的 Markdown 文件以及作为编译结果的 HTML 文件，它们都是硬编
+ 码到程序里的。下一章，我要让程序能够通过命令行参数传递文件的名字。
+*** 附录
+
+#+BEGIN_SRC
+ 可将 foo.md 变换为 foo.html 的完整代码如下：
+
+ (defun section-n (level name)
+   (let ((n (length level)))
+     (format "<h%d>%s</h%d>" n name n)))
+
+ (defun empty-line (text) "")
+
+ (defun paragraph (text)
+   (format "<p>%s</p>" text))
+
+ (defun translate (text)
+   (cond
+    ((string-match "^\\(#+\\)[[:blank:]]+\\(.+\\)$" text)
+     (section-n (match-string 1 text) (match-string 2 text)))
+    ((string-match "^$" text)
+     (empty-line text))
+    (t (paragraph text))))
+
+ (defun current-line ()
+   (buffer-substring (line-beginning-position) (line-end-position)))
+
+ (defun translate-buffer (source target)
+   (with-current-buffer source
+     (let (text)
+       (while (< (point) (point-max))
+         (setq text (translate (current-line)))
+         (with-current-buffer target
+           (insert (concat text "\n"))
+         (forward-line 1)))))
+
+ (let ((html-buffer (generate-new-buffer "html")))
+   (translate-buffer (find-file input) html-buffer)
+   (with-current-buffer html-buffer
+     (write-region nil nil output)))
+#+END_SRC
+** Elisp-07: 命令行界面
+
+很多程序是有图形界面的，就是日常所见的那些有菜单和按钮的窗口以及对话框之类。在终
+端里运行的程序，通常也叫命令行程序，它们也有界面，即一组选项和参数。这两种程序，
+各有所长，也各有所短。
+
+我之所以学习 Elisp 语言，是因为感觉它的长处适合编写文本处理程序，例如上一章所写
+的一个简单的文本处理程序，它可以将文本由 Markdown 格式翻译为 HTML 格式。像这样的
+文本处理程序，它们的运行通常并不需要图形界面，否则我为何不直接为 Emacs 写一个插
+件呢？
+*** 命令行选项和参数
+
+ 如同函数可以有参数，命令行程序也可以有一些参数。凡是函数或程序无法决断的一些因
+ 素，可抽象为一组参数，交由函数或程序的使用者决断。命令行选项本质上也是命令行参
+ 数，只不过它相当于程序的一些功能开关，可用于开启或关闭程序的一些功能，也可用于
+ 修饰其他参数。
+
+ 选项倾向于定性，而参数倾向于定量。当二者统一为程序的参数时，便可使得程序能够明
+ 确我们要用它解决什么问题。有些问题只需要定性的角度去解决。有些问题只需要从量化
+ 的角度去解决，因此对二者作区分，也是有意义的。
+
+ 在 Linux 系统里，命令行程序占据了半壁甚至更多的江山。这些命令行程序的选项，通常
+ 以 - 或 -- 作为前缀，参数则没有前缀，于是在形式上对于程序的使用者而言，二者有着
+ 明显的区别。为一个命令行程序设计界面
+
+ 在上一章里，我写了个可将文本由 Markdown 格式变换为 HTML 格式的程序。这个程序虽
+ 然在功能上远不健全，但是已经到了要为它设计选项和参数的时候了。
+
+ 假设这个程序名为 mdc.el，执行这个程序时，它支持 -i 和 -o 两个选项。-i 选项用于
+ 指定输入文件名，-o 选项用于指定输出文件名，其中输入文件名和输入文件名都是与选项
+ 对应的参数。例如
+#+BEGIN_SRC
+ $ emacs -Q --script mdc.el -i foo.md -o foo.html
+#+END_SRC
+
+ 倘若不向 mdc.el 提供任何选项和参数，或者提供了它不认识的选项和参数，它也不表示
+ 任何不满意，仅仅是在终端输出：
+
+#+BEGIN_SRC
+ 用法：emacs -Q --script mdc.el -i 输入文件 -o 输出文件
+#+END_SRC
+*** 命令行界面的实现
+
+ 嵌入在 Emacs 内部的 Elisp 解释器，它能够从终端里获得所有的选项和参数，将结果保
+ 存为一个列表变量 argv，这是个全局变量。于是，在 mdc.el 程序里，只需访问这个列表，
+ 便可以获得所需的选项和参数。当然，这需要对 argv 进行遍历，然后做一些文本匹配方
+ 面的工作。这些工作不再有任何难度，所需要的知识，在前面的章节里已经运用得很熟练
+ 了吧。
+
+ 假设 mdc.el 的实现如下：
+#+BEGIN_SRC
+ (defun princ\' (x)
+   (princ x)
+   (princ "\n"))
+
+ (while (not (null argv))
+   (princ\' (car argv))
+   (setq argv (cdr argv)))
+#+END_SRC
+
+ 注意，在判断列表是否为空，我一直是使用 (not (null 列表对象)) 的方式，因为我一直
+ 不想承认 Elisp 语言里非 nil 即为真的规矩。但是，现在觉得，入乡还是随俗吧，承认
+ (not (null 列表对象)) 等价于 列表对象。
+
+ 执行 mdc.el，
+
+#+BEGIN_SRC
+ $ emacs -Q --script mdc.el a b foo bar blab blab
+#+END_SRC
+
+ 结果在终端输出以下信息：
+
+#+BEGIN_SRC
+ a
+ b
+ foo
+ bar
+ blab
+ blab
+#+END_SRC
+
+ 这意味着遍历 argv 的程序是正确的。倘若在遍历过程中增加文本匹配和参数获取功能，
+ 便可以得到输入文件名和输出文件名了。例如，
+
+#+BEGIN_SRC
+ (let (x input output)
+   (while argv
+     (setq x (car argv))
+     (setq argv (cdr argv))
+     (cond
+      ((string= x "-i")
+       (setq input (car argv)))
+      ((string= x "-o")
+       (setq output (car argv)))))
+   (if (or (not input) (not output))
+       (princ\' "emacs -Q --script mdc.el -i 输入文件 -o 输出文件")))
+#+END_SRC
+
+ 在上述代码中，遍历 argv 过程结束后，基于逻辑「或」运算 or，对 input 和 output
+ 变量进行了基本的有效性检测。该检测仅能保证它们已经得到了赋值，但是所赋之值是否
+ 正确，例如在命令行里输入了错误的文件名，这种情况，程序无法判断。
+
+*** 功能与界面的结合
+
+ 上一节最后的那段代码里，检测变量 input 和 output 的有效性的条件表达式只含有逻辑
+ 表达式为真时对应的程序分支，另一个分支不存在，现在可以为将 mdc.el 的功能部分作
+ 为该分支。
+
+ mdc.el 的功能部分，即上一章所实现的缓冲区变换程序，其中可与界面代码进行结合的部
+ 分是
+
+#+BEGIN_SRC
+ (let ((html-buffer (generate-new-buffer "html")))
+   (translate-buffer (find-file "foo.md") html-buffer)
+   (with-current-buffer html-buffer
+     (write-region nil nil "foo.html")))
+#+END_SRC
+
+ 现在可以将这段代码中的 foo.md 和 foo.html 替换为字符串变量 input 和 output，然
+ 后将这段代码嵌入到界面代码里，结果为
+
+#+BEGIN_SRC
+ (let (x input output)
+   (while argv
+     (setq x (car argv))
+     (setq argv (cdr argv))
+     (cond
+      ((string= x "-i")
+       (setq input (car argv)))
+      ((string= x "-o")
+       (setq output (car argv)))))
+   (if (or (not input) (not output))
+       (princ\' "emacs -Q --script mdc.el -i 输入文件 -o 输出文件")
+     (let ((html-buffer (generate-new-buffer "html")))
+       (translate-buffer (find-file input) html-buffer)
+       (with-current-buffer html-buffer
+         (write-region nil nil output)))))
+#+END_SRC
+
+ 
+*** Hash 表
+
+ 上一节最后给出的代码有些繁冗，不妨将命令行选项解析部分以及程序功能部分处理出来，
+ 封装为函数。
+
+ 若将命令行解析部分封装为函数，那么该函数的求值结果应该包含着 input 和 output 的
+ 值。能够包含多个值的求值结果，在 Elisp 语言里，只有表。可以是列表，也可以是
+ Hash 表，后者更适合存储命令行程序的选项和参数，因为它可以将选项以及它修饰的参数
+ 组成键值对结构。
+
+ 使用 Elisp 函数 make-hash-table 可创建 Hash 表实例，例如
+
+#+BEGIN_SRC
+ (make-hash-table :test 'equal)
+#+END_SRC
+
+ 其中，:test 'equal 用于指定使用 equal 函数判断用于从 Hash 表检索数据的键与 Hash
+ 表的键是否相等。我不知道为什么 string= 不可以。equal 可以比较两个对象是否相同，
+ 应用范围要比 = 和 string= 更为广泛，例如它也可以判断两个列表是否相等。除 equal
+ 外，Elisp 的 Hash 表还有两个可选的键相等测试函数，eq 和 eql，倘若不指定测试函数，
+ make-hash-table 默认使用 eql，仅适用于创建以数字作为键的 Hash 表。
+
+ 将一个符号与 Hash 表绑定，便有了一个 Hash 表变量：
+
+#+BEGIN_SRC
+ (setq mdc-args (make-hash-table :test 'equal))
+#+END_SRC
+
+ Elisp 函数 puthash 可向 Hash 表添加键值对，例如：
+
+#+BEGIN_SRC
+ (puthash "-i" "foo.md" mdc-args)
+#+END_SRC
+
+ Elisp 函数 gethash 可使用键，从 Hash 表里获得与键对应的值，例如
+
+#+BEGIN_SRC
+ (gethash "-i" mdc-args)
+#+END_SRC
+
+ 掌握了上述函数的用法，便可实现一个解析命令行，并将解析结果存储到 Hash 表的函数
+ 了，例如：
+
+#+BEGIN_SRC
+ (defun mdc-get-args (mdc-args)
+   (let (x)
+     (while argv
+       (setq x (car argv))
+       (setq argv (cdr argv))
+       (if (string-match "-i\\|-o" x)
+           (progn
+             (puthash x (car argv) mdc-args)
+             (setq argv (cdr argv)))))))
+#+END_SRC
+
+ mdc-get-args 函数的用法如下：
+
+#+BEGIN_SRC
+ (let ((mdc-args (make-hash-table :test 'equal)))
+   (mdc-get-args mdc-args)
+   (let ((input (gethash "-i" mdc-args))
+         (output (gethash "-o" mdc-args)))
+     (if (or (not input) (not output))
+         (princ\' "emacs -Q --script mdc.el -i 输入文件 -o 输出文件")
+       (let ((html-buffer (generate-new-buffer "html")))
+         (translate-buffer (find-file input) html-buffer)
+         (with-current-buffer html-buffer
+           (write-region nil nil output))))))
+#+END_SRC
+
+ 
+*** 关联列表
+
+ Elisp 的关联列表也可用于存储选项和参数，用法与 Hash 表类似，只是数据访问效率远
+ 低于后者。不过，对于存储命令行选项和参数这样的工作，关联列表足以胜任。
+
+ 关联列表的每个元素是序对。cons 可构造序对，例如：
+
+#+BEGIN_SRC
+ (cons "-i" "foo.md")
+#+END_SRC
+
+ 也可以用 . 语法构造序对，例如：
+
+#+BEGIN_SRC
+ ("-i" . "foo.md")
+#+END_SRC
+
+ 事实上，Elisp 的列表的本质就是一组级联的序对结构，例如 '(1 2 3 4)，在 Elisp 解
+ 释器看来，它的真正结构是
+
+#+BEGIN_SRC
+ (1 . (2 . (3 . (4 . ()))))
+#+END_SRC
+
+ car 可以取序对的第一个元素。cdr 则用于取序对的第二个元素。
+
+ 构造关联列表，可以像普通列表那样使用 cons 函数。例如：
+
+#+BEGIN_SRC
+ (setq mdc-args '())
+ (setq mdc-args (cons ("-i" . "foo.md") mdc-args)))
+#+END_SRC
+
+ Elisp 函数 assoc 可根据给定的键，可从关联列表里获取第一个同键的序对，例如：
+
+#+BEGIN_SRC
+ (assoc "-i" mdc-args)
+#+END_SRC
+
+ 求值结果为 ("-i" . "foo.md")。为什么要强调「第一个」呢？因为关联列表里，允许多
+ 个序对有相同的键。
+
+ 要获得键对应的值，需要使用 cdr，例如
+
+#+BEGIN_SRC
+ (cdr (assoc "-i" mdc-args))
+#+END_SRC
+
+ 至于如何使用关联列表保存命令行选项和参数，这个任务可以作为本章的练习题。
+
+ 
+*** 结语
+
+ 这个教程，更确切地说，是我学习 Elisp 所作的笔记，第一部分可就此落幕了。至于这个
+ 教程，会不会有第二部分，这取解决于我是否遇到了新的文本处理问题。
+
+ 
+*** 附录
+ 完整的 mdc.el 程序代码如下：
+
+#+BEGIN_SRC
+ (defun princ\' (x)
+   (princ x)
+   (princ "\n"))
+
+ (defun section-n (level name)
+   (let ((n (length level)))
+     (format "<h%d>%s</h%d>" n name n)))
+
+ (defun empty-line (text) "")
+
+ (defun paragraph (text)
+   (format "<p>%s</p>" text))
+
+ (defun translate (text)
+   (cond
+    ((string-match "^\\(#+\\)[[:blank:]]+\\(.+\\)$" text)
+     (section-n (match-string 1 text) (match-string 2 text)))
+    ((string-match "^$" text)
+     (empty-line text))
+    (t (paragraph text))))
+
+ (defun current-line ()
+   (buffer-substring (line-beginning-position) (line-end-position)))
+
+ (defun translate-buffer (source target)
+   (with-current-buffer source
+     (let (text)
+       (while (< (point) (point-max))
+         (setq text (translate (current-line)))
+         (with-current-buffer target
+           (insert text)
+           (insert "\n"))
+         (forward-line 1)))))
+
+ (defun mdc-get-args (mdc-args)
+   (let (x)
+     (while argv
+       (setq x (car argv))
+       (setq argv (cdr argv))
+       (if (string-match "-i\\|-o" x)
+           (progn
+             (puthash x (car argv) mdc-args)
+             (setq argv (cdr argv)))))))
+
+ (let ((mdc-args (make-hash-table :test 'equal)))
+   (mdc-get-args mdc-args)
+   (let ((input (gethash "-i" mdc-args))
+         (output (gethash "-o" mdc-args)))
+     (if (or (not input) (not output))
+         (princ\' "emacs -Q --script mdc.el -i 输入文件 -o 输出文件")
+       (let ((html-buffer (generate-new-buffer "html")))
+         (translate-buffer (find-file input) html-buffer)
+         (with-current-buffer html-buffer
+           (write-region nil nil output))))))
+#+END_SRC
+
+** Elisp-08: 文本跨行提取
+在上一章的结语里，我说这个教程是否会有第二部分，取决于我是否遇到了新的文本处理问
+题。结果很快如愿以偿。
+
+*** 问题
+
+ 下面是 XML 文件 foo.xml 的内容：
+
+ #+BEGIN_SRC
+ <bib>
+   <title>foo</title>
+ </bib>
+ <attachment>
+   <resource src="files/foo.html"/>
+   <title>foo</title>
+ </attachment>
+ <bib>
+   <title>bar</title>
+ </bib>
+ <attachment>
+   <resource src="files/bar.html"/>
+   <title>bar</title>
+ </attachment>
+ #+END_SRC
+
+ 我需要从 <attachment>...<attachment> 块里提取以下条目：
+
+ #+BEGIN_SRC
+ <resource src="files/foo.html"/>
+ <title>foo</title>
+ <resource src="files/bar.html"/>
+ <title>bar</title>
+ #+END_SRC
+
+*** 文本跨行匹配
+
+ 现在假设已用 Elisp 函数 find-file 将 foo.xml 文件内容全部载入了缓冲区，即
+
+ #+BEGIN_SRC
+ (find-file "foo.xml")
+ #+END_SRC
+
+ 然后发现，之前学过的 Elisp 知识几乎派不上用场了。之前学过的文本匹配和提取方法仅
+ 适用于单行文本，而现在面临的问题是多行文本的匹配和提取，即从当前缓冲区内提取
+
+ #+BEGIN_SRC
+ <attachment>
+   <resource src="files/foo.html"/>
+   <title>foo</title>
+ </attachment>
+ <attachment>
+   <resource src="files/bar.html"/>
+   <title>bar</title>
+ </attachment>
+ #+END_SRC
+
+ 莫说提取，仅仅是如何匹配 <attachment>...</attachment> 块就已经不好解决了。例如，
+ 以下程序
+
+ #+BEGIN_SRC
+ (find-file "foo.xml")
+
+ (let ((x (buffer-string)))
+   (string-match "<attachment>\\(.+\\)</attachment>" x)
+   (princ\' (match-string 1 x)))
+ #+END_SRC
+
+ 输出 nil，意味着 string-match 在当前缓冲区内容中匹配
+ <attachment>...</attachment> 块失败。导致失败的原因也很简单，因为正则表达式 . 虽
+ 然可以匹配任意一个字符，但它不包括换行符。
+
+*** 瞒天过海
+
+ 实现文本的跨行匹配，并非不可行，但是需要比现在更多的 Elisp 的正则表达式知识。但
+ 是，我想说的是，对于上述问题，现有的 Elisp 知识其实也是足够用，只需要转换一下思
+ 路。
+
+ 文本为什么是多行的？是因为在输入文本的时候，每一行末尾由人或程序添加了换行符。倘
+ 若能将这些换行符临时替换为一个很特殊的记号，那么多行文本就变成了单行文本。在文本
+ 匹配和处理结束后，再将这个特殊记号再替换为换行符，单行文本又复原为多行文本。此为
+ 瞒天过海之计。
+
+ 将当前缓冲区内所有的换行符替换为一个特殊记号，可基于第 6 章所讲的缓冲区变换方法
+ 予以实现。本章给出一个更快捷的方法。Elisp 函数 replace-string 可在当前缓冲区内使
+ 用指定字串替换所有目标字串，例如
+
+ #+BEGIN_SRC
+ (let ((x "")
+       (y "")
+       (one-line (generate-new-buffer "one-line")))
+   (find-file "foo.xml")
+   (setq x (buffer-string))
+   (with-current-buffer one-line
+     (insert x)
+     (goto-char (point-min))
+     (replace-string "\n" "<linebreak/>")
+     (setq y (buffer-string)))
+   (princ\' y))
+ #+END_SRC
+
+ 执行上述程序后，在新创建的缓冲区 one-line 里存放的便是 foo.xml 缓冲区的单行化结
+ 果。倘若将上述代码里的 (princ\' y) 语句替换为
+
+ #+BEGIN_SRC
+ (string-match "<attachment>\\(.+\\)</attachment>" y)
+ (princ\' (match-string 1 y))
+ #+END_SRC
+
+ 便可提取 <attachment>...</attachment> 块，尽管提取的结果是错的。
+
+ 为了更方便观察错误，需要构造一个简单的例子：
+
+ #+BEGIN_SRC
+ (setq x "abcabcabc")
+ (string-match "a\\(.+\\)a" x)
+ (princ\' (match-string 1 x))
+ #+END_SRC
+
+ 这个例子会输出什么呢？虽然我很期望它输出 bc，但事实上它输出的是 bcabc。这是因
+ 为 + 是很贪婪的，它总是希望能匹配最长的结果，而不是最短的。* 也是如此。在 Elisp
+ 的正则表达式里，在它们的后面加一个 ?，便可以抑制它们的贪婪，例如
+
+ #+BEGIN_SRC
+ (setq x "abcabcabc")
+ (string-match "a\\(.+?\\)a" x)
+ (princ\' (match-string 1 x))
+ #+END_SRC
+
+ 此时，程序的输出结果便是 bc 了。
+
+*** 递增搜索
+
+ Elisp 函数 re-search-forward 可以在缓冲区内搜索与正则表达式匹配的文本的同时，将
+ 插入点移动到缓冲区的匹配位置。基于该函数，再借助 Elisp 正则表达式的文本捕获功能，
+ 便可从上一节构造的 one-line 缓冲区内提取多个 <attachment>...</attaqchment> 块了。
+
+ 为了演示 re-search-forward 的用法，我将上一节的那段示例代码改造为以下代码：
+
+ #+BEGIN_SRC
+ (let ((x "")
+       (one-line (generate-new-buffer "one-line"))
+       (output (generate-new-buffer "output")))
+   (find-file "foo.xml")
+   (setq x (buffer-string))
+   (with-current-buffer one-line
+     (insert x)
+     (goto-char (point-min))
+     (replace-string "\n" "<linebreak/>")
+     (goto-char (point-min))
+     (while t
+       (if (re-search-forward "\\(<attachment>.+?</attachment>\\)" nil t 1)
+           程序分支 1
+         程序分支 2))))
+ #+END_SRC
+
+ re-search-forward 是迄今为止我用过的最为复杂的 Elisp 函数了，它有 4 个参数，但只
+ 有第 1 个参数是必须的，其他 3 个参数皆为可选——倘若不设定它们的值，
+ re-search-forward 会使用它们的默认值。这 4 个参数释义如下：
+
+     1. 第一个参数，是用于文本匹配的 Elisp 正则表达式。
+     2. 第二个参数，用于设定最大搜索范围。由于 re-search-forward 是在当前缓冲区内
+        进行文本匹配搜索，搜索的起始位置是插入点所在位置，终止位置可通过它的第二
+        个参数设定，若该参数值为 nil，则将当前缓冲区的尽头作为搜索范围的终止位置。
+     3. 第三个参数值若为 nil，在未搜索到匹配文本时，re-search-forward 便会报错。
+        若该参数值为 t，re-search-forward 会返回 nil。若该参数值即不是 nil，也不
+        是 t，则 re-search-forward 函数将插入点移动到搜索区域的尽头，然后返回 nil。
+     4. 第四个参数 COUNT，可令 re-search-forward 的搜索过程维持到第 COUNT 次匹配
+        后结束，倘若未设定这个参数，其值默认为 1。
+
+ 若充分理解了 re-search-forward 函数的用法，则上述代码虚设的程序分支 1 对应的代码
+ 便可写出来了，不再需要新的 Elisp 知识，即
+
+ #+BEGIN_SRC
+ (let ((y (match-string 1)))
+   (with-current-buffer output
+     (insert (concat y "\n"))))
+ #+END_SRC
+
+ 就是将 re-search-forward 捕获的文本用 match-string 函数取出后插入 output 缓冲区。
+ 在此需要注意，若正则表达式捕获的文本属于当前缓冲区，match-string 函数无需写第 2
+ 个参数。
+
+ 对于程序分支 2，即 re-search-forward 匹配失败情况的处理，现有的 Elisp 知识是真的
+ 不够用了。因为该程序分支属于一个无限迭代过程，要从后者跳出，需要像其他编程语言那
+ 样，需要有 return 或 break 语法，可提前终止迭代过程。catch/throw
+
+ Elisp 语言没有 return 和 break，但是它有 catch/throw 表达式。
+
+ 下面的示例
+
+ #+BEGIN_SRC
+ (catch 'foo
+   (princ\' "foo")
+   (princ\' "bar"))
+ #+END_SRC
+
+ 可输出
+
+ #+BEGIN_SRC
+ foo
+ bar
+ #+END_SRC
+
+ 现在，倘若我将上述代码修改为
+
+ #+BEGIN_SRC
+ (catch 'foo
+   (princ\' "foo")
+   (throw 'foo nil)
+   (princ\' "bar"))
+ #+END_SRC
+
+ 那么位于 throw 表达式之后的代码便会被 Elisp 解释器忽略，因而现在的代码只能输出
+ foo
+
+ 倘若将上述代码修改为
+
+
+ #+BEGIN_SRC
+ (princ\' (catch 'foo
+            (princ\' "foo")
+            (throw 'foo nil)
+            (princ\' "bar")))
+ #+END_SRC
+
+
+ 输出结果则变为
+
+ foo
+ nil
+
+ 因为 throw 的第 2 个参数 nil 会被 Elisp 作为 catch 表达式的求值结果。
+
+ catch/throw 在 Elisp 语言里称为「非本地退出」，基于它们便可模拟其他编程语言里的
+ return，break 以及异常机制。
+
+ 基于 catch/throw，便可实现上一节所述的程序分支 2 了，例如
+
+ (throw 'break nil)
+
+ 然后只需将 while 表达式放在 catch 块里，由后者捕捉 throw 抛出的 'break，即
+
+ #+BEGIN_SRC
+ (catch 'break
+   (while t
+     (if (re-search-forward "\\(<attachment>.+?</attachment>\\)" nil t 1)
+         程序分支 1
+       (throw 'break nil))))
+ #+END_SRC
+
+*** 恢复多行文本
+
+ 现在，以下代码
+
+ #+BEGIN_SRC
+ (let ((x "")
+       (one-line (generate-new-buffer "one-line"))
+       (output (generate-new-buffer "output")))
+   (find-file "foo.xml")
+   (setq x (buffer-string))
+   (with-current-buffer one-line
+     (insert x)
+     (goto-char (point-min))
+     (replace-string "\n" "<linebreak/>")
+     (goto-char (point-min))
+     (catch 'break
+         (while t
+           (if (re-search-forward "\\(<attachment>.+?</attachment>\\)" nil t 1)
+               (let ((y (match-string 1)))
+                 (with-current-buffer output
+                   (insert (concat y "\n"))))
+             (throw 'break nil))))))
+ #+END_SRC
+
+ 已基本解决本章开始所提出的问题了，因为 output 缓冲区内存放着从 foo.xml 文件里提
+ 取的两个 <attachment>...</attachment> 块，接下来，我只需将其中的 <linebreak/> 替
+ 换为 \n，问题便完全解决了。但是，我觉得这个任务可以留作本章习题。
+
+*** save-excursion
+
+ 在当前缓冲区内，insert，replace-string 以及 re-search-forward 等函数，皆有副作用，
+ 它们会移动插入点。在文本处理时，要记住当前的插入点所在的位置，然后调用这些函数之
+ 后，需要再将插入点恢复原位。这是前面几节代码多次出现
+ #+BEGIN_SRC
+ (goto-char (point-min))
+ #+END_SRC
+ 的主要原因。Elisp 提供了 save-excursion 语法，它可以自动将插入点的位置保存下来，
+ 然后执行一些可能会移动插入点的运算，最后再将插入点恢复原位。例如
+
+ #+BEGIN_SRC
+ (save-excursion
+   (insert x))
+ #+END_SRC
+
+ 与
+
+ #+BEGIN_SRC
+ (let ((p (point)))
+   (insert x)
+   (goto-char p))
+ #+END_SRC
+
+ 等价。
+
+ 因此，本章第二个习题是，基于 save-excursion 语法修改上一节习题的答案。
+
+*** 结语
+
+ 本章介绍了 Elisp 缓冲区里更多的运算以及非本地退出语法。掌握了这些知识，可从任何
+ 文本文档内提取符合模式的由多行文本构成的文本块。
+
+** Elisp-09: 库 
+从第 1 章就定义了的 princ\' 函数被我一路使用至今，我一直觉得它很有用处，特别是在
+我调试程序的时候。我承认，用这种办法调试程序很原始。不过，筷子也很原始。为了不再
+张贴完整的代码之时附上它的定义，我决定建立一个 Elisp 库，用于存放它的定义以及今
+后我定义的其他函数。库文件
+
+我将这个库的全部代码存放在一份名为 newbie.el 文件里，目前只有 princ\' 的定义：
+#+BEGIN_SRC
+(defun princ\' (x)
+  (princ x)
+  (princ "\n"))
+#+END_SRC
+
+但是，newbie.el 应当放在何处？
+
+#+BEGIN_SRC
+EMACSLOADPATH
+#+END_SRC
+
+系统环境变量 *EMACSLOADPATH* 可为库文件指定路径。假设我将 newbie.el 放在
+$HOME/.my-scripts/elisp 目录里，那么在我的机器上，由于我用的 Shell 是 Bash，因此
+可在 $HOME/.bashrc 文件里设定
+
+#+BEGIN_SRC
+export EMACSLOADPATH=$HOME/.my-scripts/elisp:$EMACSLOADPATH
+#+END_SRC
+
+在当前终端里执行
+
+#+BEGIN_SRC
+$ source $HOME/.bashrc
+#+END_SRC
+
+或重新打开一个终端窗口，令上述设定生效。
+
+*** 库的载入
+
+ 假设我要写一个 foo.el 程序，它需要调用 newbie.el 里定义的函数 princ\'，只需在调
+ 用 princ\' 之前，载入 newbie.el 即可。例如
+
+ #+BEGIN_SRC
+ (load "newbie")
+ (princ\' "Hello world!")
+ #+END_SRC
+
+ 在终端执行 foo.el 程序，
+
+ #+BEGIN_SRC
+ $ emacs -Q --script foo.el
+ #+END_SRC
+
+ 程序输出
+
+ #+BEGIN_SRC
+ Loading /home/garfileo/.my-scripts/elisp/newbie.el (source)...
+ Hello world!
+ #+END_SRC
+
+ load 函数是 Elisp 的内建函数，它的第一个参数是库文件名，但是没有扩展名。因为
+ load 函数会在 $EMACSLOADPATH 指定的目录中自动搜索三种库文件。对于上例，load 函数
+ 会依序搜索 newbie.elc，newbie.el，newbie.ext 这三个文件，只要搜到其中之一，搜索
+ 过程便终止，然后将搜到的文件内容载入至当前程序。newbie.ext 中的「ext」取决于系统
+ 平台，在 Linux 系统里，「ext」是「so」；在 Windows 系统里，「ext」是「dll」；亦
+ 即 newbie.ext 可以是 C 语言接口的共享库。没错，Elisp 可以载入 C 库，但是需要为它
+ 们编写接口绑定，这是后话，暂且不表。
+
+ 如果不希望程序执行时在终端输出库的加载信息，只需令 load 函数的第三个参数为 t：
+
+ #+BEGIN_SRC
+ (load "newbie" nil t)
+ #+END_SRC
+
+ 其中，第 2 个参数是被迫写上的，因为没有第 2，怎么会有第 3 呢？第 2 个参数如果是
+ nil，load 函数在搜索不到待载入的库文件时会在终端里输出错误信息，否则不会。
+
+*** load-path
+
+ 系统变量 EMACSLOADPATH 的设定，依赖于具体的操作系统。不依赖操作系统的库文件搜索
+ 路径的设定方法也是有的。Emacs 有个全局变量 load-path，它是列表。
+
+ 如果我将 foo.el 程序修改为
+
+ #+BEGIN_SRC
+ (load "newbie" nil t)
+ (princ\' load-path)
+ #+END_SRC
+
+ 执行该程序，在我的机器上会得到以下结果：
+
+ (/home/garfileo/.my-scripts/elisp /usr/share/emacs/27.2/lisp ...)
+
+ 不难发现，我通过 EMACSLOADPATH 设定的路径也被加入到了这个列表。
+
+ 用 Elisp 语言如何操纵列表，现在应该是不废吹灰之力，因此将 foo.el 程序写成
+
+ #+BEGIN_SRC
+ (setq load-path (cons "$HOME/.my-scripts/elisp" load-path))
+ (load "newbie" nil t)
+ (princ\' "Hello world!")
+ #+END_SRC
+
+ 没什么理由不会在终端里输出
+
+ #+BEGIN_SRC
+ Hello world!
+ #+END_SRC
+
+ 不过，Elisp 对列表提供了几个可以添加元素的函数，例如 push。以下代码
+
+ #+BEGIN_SRC
+ (push "$HOME/.my-scripts/elisp" load-path)
+ #+END_SRC
+
+ 与
+
+ #+BEGIN_SRC
+ (setq load-path (cons "$HOME/.my-scripts/elisp" load-path))
+ #+END_SRC
+
+ 等价。
+
+*** 结语
+** Elisp-10: 宏
+   上一章实现了只定义了一个函数的库 newbie.el。事实上，这个函数可以不用定义成函数，
+定义成宏也可以，而且能让调用代码的执行效率微乎其微地更高一些。因为，调用函数，就
+像是去车站乘坐客车，而调用宏，犹如乘坐自家的私家车。这是一个不是很准确的比喻，所
+以它仅仅是个比喻。
+*** 定义宏
+
+ 先定义一个什么也干不了的宏，
+ #+begin_src
+ (defmacro foo ())
+ #+end_src
+
+ 在形式上，定义宏，似乎跟定义函数差不多，只是 defun 换成了 defmacro。
+
+ 调用一个宏，也跟调用一个函数差不多，例如调用上述定义的什么也干不了的宏 foo;
+
+ #+begin_src
+ (foo)
+ #+end_src
+
+ 对于这个宏调用，Elisp 的求值结果是 nil。为什么是 nil 呢？因为 Elisp 解释器遇到宏
+ 调用语句，会用宏的定义替换它，此即宏的展开。上述 (foo) 语句会被替换为
+
+ 就是什么都没有。什么都没有，就是 nil。
+
+ 倘若是让 foo 的定义有点什么，例如
+
+ #+begin_src
+ (defmacro foo ()
+   t)
+ #+end_src
+
+ 那么宏调用语句的展开结果就是 t。
+
+ 宏也可以像函数那样拥有参数，例如
+
+ #+begin_src
+ (defmacro foo (x)
+   x)
+ #+end_src
+
+ 宏调用 (foo "Hello world!") 的展开结果便是 "Hello world!"。
+*** 像构造数据一样构造程序
+
+ 宏的定义，展现的是 Lisp 语言的一个很重要的特性，在程序里可以像构造数据一样地构造
+ 程序。例如
+
+ #+begin_src
+ (defmacro foo ()
+   (list '+ 1 2 3))
+ #+end_src
+
+ Elisp 解释器会对宏定义里的表达式予以求值。上述宏定义里的 (list '+ 1 2 3)，求值结
+ 果就是 (+ 1 2 3)。因此，宏调用语句 (foo) 会被 Elisp 解释器展开为 (+ 1 2 3)，然后
+ Elisp 解释器会对宏的展开结果继续进行求值，因此 (foo) 的求值结果是 6。利用 Elisp
+ 解释器对宏的定义和调用的处理机制，便可以在程序里像构造数据一样地构造程序。
+
+ 由于 (list '+ 1 2 3) 与 '(+ 1 2 3) 近乎等价，因此上述宏定义可简化为
+
+ #+begin_src
+ (defmacro foo ()
+   '(+ 1 2 3))
+ #+end_src
+
+ *在宏的定义里使用引号构造程序要注意引号会屏蔽 Elisp 解释器对参数的处理* 。例如
+
+ #+begin_src
+ (defmacro foo (x y z)
+   '(+ x y z))
+ #+end_src
+
+ 这个宏的定义是合法的，但是若像下面这样调用它
+
+ #+begin_src
+ (foo 1 2 3)
+ #+end_src
+
+ 并不会被展开为 (+ 1 2 3)，而是会被展开为 (+ x y z)。因为 Elisp 在对宏定义求值时，
+ 认为宏定义里的 '(+ x y z) 只是一个字面意义上的列表，其中的 x，y，z 并非宏的参数
+ 值。因此，在宏的定义里，需要清楚，哪些是字面上的数据，哪些是变量或函数调用。对于
+ 上例，需要用回 list，即
+
+ #+begin_src
+ (defmacro foo (x y z)
+   (list '+ x y z))
+ #+end_src
+
+ 如此，(foo 1 2 3) 便会被展开为
+
+ #+begin_src
+ (+ 1 2 3)
+ #+end_src
+*** 反引号
+
+ 宏定义
+
+ #+begin_src
+ (defmacro foo (x y z)
+   (list '+ x y z))
+ #+end_src
+
+ 与
+
+ #+begin_src
+ (defmacro foo (x y z)
+   `(+ ,x ,y ,z))
+ #+end_src
+
+ 同义。
+
+ 引号 ' 可以让一个列表整体变成字面意义上的列表，而反引号（通常在键盘上与 ~ 位于
+ 同 一键位）也可以让一个列表变成字面意义上的列表，但是倘若前面由 , 修饰的符号，例
+ 如宏的参数，Elisp 解释器便不再将其视为字面意义上的符号了。*
+
+ 在反引号作用的列表里，,@ 可将一个列表里的元素提升到外层列表，例如
+
+ #+begin_src
+ `(1 ,@(list 2 3) 4)
+ #+end_src
+
+ 和
+
+ #+begin_src
+ `(1 ,@'(2 3) 4)
+ #+end_src
+ 以及
+
+ #+begin_src
+ `(1 ,@`(2 3) 4)
+ #+end_src
+
+ 的求值结果皆为 (1 2 3 4)。
+
+ 利用这些奇怪的符号，在宏定义里像构造构造程序会更为便捷。
+*** princ\n 宏
+
+ 以下代码定义的宏
+
+ #+begin_src
+ (defmacro princ\n (x)
+   `(progn
+      (princ ,x)
+      (princ "\n")))
+ #+end_src
+
+ 可代替 newbie.el 里的 princ\'，例如
+
+ #+begin_src
+ (princ\n "Hello world!")
+ #+end_src
+
+ 以后我会一直使用 princ\n 宏。
+*** 变量捕获
+
+ 有些时候，需要在宏的定义里使用局部变量。例如
+
+ #+begin_src
+ (defmacro bar (x y a)
+   `(let (z)
+      (if (< ,x ,y)
+          (setq z ,x)
+        (setq z ,y))
+      (+ ,a z)))
+ #+end_src
+
+ 这个宏可将其参数 x 和 y 中较小者与 a 相加。例如
+
+ #+begin_src
+ (bar 2 3 1)
+ #+end_src
+
+ 求值结果为 3。
+
+ bar 的调用如果出现在一些巧合的环境里，例如
+
+ #+begin_src
+ (let ((z 1))
+   (bar 2 3 z))
+ #+end_src
+
+ 求值结果为 4，而不是 3。之所以会出现这种不符合预期的结果，是因为上述宏调用语句被展开为
+
+ #+begin_src
+ (let ((z 1))
+   (let (z)
+     (if (< 2 3)
+         (setq z 2)
+       (setq z 3))
+     (+ z z)))
+ #+end_src
+
+ 之所以会出现这样的展开结果，是因为 Elisp 解释器不会对宏参数进行求值，而是将其原
+ 样传入宏的定义，用它们去替换宏的参数。(bar 2 3 z) 的第三个参数是 z，Elisp 解释器
+ 将这个参数原样传入 bar 的定义后，后者的参数 a 就被换成了 z，但是 bar 的定义里有
+ 一个局部变量 z，在最后的 (+ z z) 表达式里，第一个 z 本应是我传给 bar 的参数，但
+ 是 Elisp 解释器在这种情况下，会认为它是 bar 的局部变量，于是，计算结果便不符合我
+ 的预期了。
+*** 卫生宏
+
+ 能保证宏定义里的局部变量不与宏展开环境里外部变量产生混淆的宏，称为「卫生宏」。
+ Elisp 的宏不卫生。同为 Lisp 方言的 Scheme 语言提供了卫生宏。近年来，新兴的 Rust
+ 语言也支持卫生宏。不过，Elisp 可以利用体制外（Uninterned）的符号模拟卫生宏。
+
+ Elisp 解释器在对程序解释执行的过程中，会维护一些存储着符号的表，这些符号要么是绑
+ 定了数据，要么是绑定了函数，要么是绑定了宏。出现在这些表里的符号，就是体制内的
+ （Interned），没出现在这个表里的符号，就是体制外的。使用 Elisp 函数 make-symbol
+ 可以创建体制外的符号。例如
+
+ #+begin_src
+ (setq z 3)
+ (setq other-z (make-symbol "z"))
+ #+end_src
+
+ 第一个表达式里的 z 是绑定到数字 3 的符号，它是体制内的，而 make-symbol 创建的符
+ 号也叫 z，但它是体制外的，我用一个体制内的符号 other-z 绑定了这个体制外的也叫 z
+ 的符号。利用这个 other-z 绑定的体制外的 z 符号，便可以令上一节定义的宏 bar 变得
+ 卫生，即
+
+ #+begin_src
+ (defmacro bar (x y a)
+   (let ((other-z (make-symbol "z")))
+     `(progn
+        (if (< ,x ,y)
+            (setq ,other-z ,x)
+          (setq ,other-z ,y))
+        (+ ,a ,other-z))))
+ #+end_src
+
+ bar 的新定义再也不怕变量捕捉了。试试看，
+
+ #+begin_src
+ (let ((other-z 1))
+   (bar 2 3 other-z))
+ #+end_src
+
+ 在上述调用 bar 的语句里，虽然第三个参数与 bar 定义里的局部变量 other-z 同名，但
+ 是不会再发生变量捕捉的情况了，因而上述代码的求值结果为 3。
+
+ 重新定义的 bar 是如何避免变量捕捉的呢？要理解这一切，就要对 Elisp 如何对宏的定义
+ 进行求值有深刻的理解。
+  + 首先，Elisp 解释器会对宏定义里的任何一个表达式进行求值，倘若想禁止它对某个表
+    达式求值，那就需要用引号。用引号修饰的表达式，Elisp 解释器会将其视为常量。
+  + 但是，通过反引号以及逗号，可以在 Elisp 视为常量的表达式里开辟一些可变之处，后
+    者便是重新定义的 bar 能避免变量捕捉的关键，因为 Elisp 对宏定义的常量部分不会
+    求值，
+  + 但是常量里可变的地方会进行求值。这就相当于，在宏定义里，可以让一段代码处于
+    「静止」的状态，而让这段代码里的部分区域是可以被 Elisp 解释器修改成我们需要的
+    结果。
+
+ bar 的定义里会原本会发生变量捕捉的语句是
+
+ #+begin_src
+ (+ ,a ,other-z)
+ #+end_src
+
+ 由于 other-z 已经是在 let 表达式的开头将其绑定到一个体制外的符号 z 了，所以
+ Elisp 解释器在对宏定义求值时，会认为所有的 ,other-z 视为（或求值为）这个体制外的
+ 符号 z，亦即等 bar 调用语句被 Elisp 展开后，符号 other-z 已经不是 other-z 了，而
+ 是那个体制外的 z。在 bar 的定义里，作为局部变量的 other-z 绝无可能再与外部同名的
+ 变量产生混淆了。这就是 Elisp 语言构造卫生宏的办法。
+
+ 事实上，在上述 bar 的定义里，我根本没必要使用 other-z，完全可以像下面这样定义 bar：
+
+ (defmacro bar (x y a)
+   (let ((z (make-symbol "z")))
+     `(progn
+        (if (< ,x ,y)
+            (setq ,z ,x)
+          (setq ,z ,y))
+        (+ ,a ,z))))
+
+ 在上述代码的 let 表达式里，体制内的符号 z 绑定到体制外的符号 z，然后在后续的代码
+ 里，,z 皆会被 Elisp 解释器求值为体制外的符号 z，如此一来，以下宏调用语句
+
+ (let ((z 1))
+   (bar 2 3 z))
+
+ 求值结果符合预期，为 3。
+
+ 体制外的，有助于卫生建设。
+*** 结语
+
+ 本章仅介绍了 Elisp 宏最为浅显的知识，它真正的用武之地是为 Elisp 语言定义新的语法
+ （这种方式通常称为元编程），而非定义 princ\n 这种原本就可以用函数轻易实现的东西。
+** Elisp-11：动态模块
+Emacs 从版本 25 开始支持动态模块。所谓动态模块，即 C 语言编写的共享库 1 。Emacs
+的动态模块，就是 Elisp 的动态模块。因此，倘若 Elisp 语言编写的程序某些环节存在性
+能瓶颈，可借 C 语言之力予以缓解。对于其他编程语言，只要能够调用 C 程序库，皆能用
+于编写 Emacs 的动态模块。本章仅讲述如何使用 C 语言完成此事，所用的 C 编译器为
+gcc。
+*** 又一个 Hello world!
+
+ Hello world 程序总是能够帮助我们忽略大量的细节，而掌握一个程序的基本相貌，这一经
+ 验对于如何编写 Emacs 动态模块依然适用。
+
+ 我建议使用 Emacs 但是并不禁止使用其他文本编辑器创建 C 程序源文件 foo.c，在其中郑
+ 重其事地写下
+ #+begin_src
+ #include <emacs-module.h>
+ int plugin_is_GPL_compatible;
+ #+end_src
+
+ 使用 C 语言为 Emacs 编写的任何一个动态模块皆以上述代码作为开头。
+
+ 接下来应该写 main 函数了。每个 C 程序皆以 main 函数作为程序的入口和出口。但是，
+ *Emacs 动态模块的入口和出口不是 main* ，而是
+
+ #+begin_src
+ int emacs_module_init (struct emacs_runtime *ert)
+ {
+         return 0;
+ }
+ #+end_src
+
+ 跟 C 程序的 main 函数相似，返回 0 表示成功，返回其他整型数值意味着失败。
+
+ 还记得 C 程序的 Hello world 吗？
+
+ #+begin_src
+ #include <stdio.h>
+
+ int main(void)
+ {
+         printf("Hello world!\n");
+         return 0;
+ }
+ #+end_src
+
+ Emacs 的动态模块在以上述的代码为基础，也能写出类似的 Hello world 程序。下面给出
+ foo.c 的全部内容：
+
+ #+begin_src
+ #include <stdio.h>
+ #include <emacs-module.h>
+ int plugin_is_GPL_compatible;
+
+ int emacs_module_init (struct emacs_runtime *ert)
+ {
+         printf("Hello world!\n");
+         return 0;
+ }
+ #+end_src
+
+ 执行以下命令
+
+ #+begin_src
+ $ gcc -I /usr/include/emacs-27 -fPIC -shared foo.c -o foo.so
+ #+end_src
+
+ 便可将 foo.c 编译为共享库 foo.so。注意，上述命令里，/usr/include/emacs-27 是我机
+ 器上的 Linux 系统里 emacs-module.h 文件所在路径，不同的 Emacs 版本或不同的操作系
+ 统，需要因地制宜。
+
+ 将 foo.so 放到系统变量 EMACSLOADPATH 定义的目录或 Elisp 的 load-path 列表里定义
+ 的目录里。完成上述工作，便可在 Elisp 程序里载入 foo.so，例如创建 Elisp 程序
+ foo.el，令其内容为
+
+ #+begin_src
+ (load "foo" nil t)
+ 然后执行
+ $ emacs -Q --script foo.el
+ 可得到以下输出：
+ Hello world!
+ #+end_src
+
+ 这就是 Emacs 动态模块的 Hello world。成功加载这个模块后，心里不禁有些小激动呢。
+*** 创建可在 Elisp 程序里调用的 C 函数
+ 现在考虑用 C 写一个可以计算宇宙的终极答案的函数，然后在 Elisp 里调用。这样的函数
+ 称为模块函数。
+
+ 在动态模块的 C 代码里，可在 Elisp 程序调用的 C 函数，其格式必须像下面这样
+
+ #+begin_src
+ emacs_value func (emacs_env *env,
+                   ptrdiff_t nargs,
+                   emacs_value *args,
+                   void *data)
+ {
+        
+ }
+ #+end_src
+
+ 上述代码仅仅是一个空壳函数，因为现在我还不知道 emacs_value 这个类型的返回值该如
+ 何构造。由于宇宙的终极答案是 42，经过认真阅读 Elisp 手册，我找到了一个办法。
+ emacs_env 里有一个函数 make_integer，用它可以构造 emacs_value 类型的实例，例如
+
+ #+begin_src
+ emacs_value foo_answer (emacs_env *env,
+                         ptrdiff_t nargs,
+                         emacs_value *args,
+                         void *data)
+ {
+         return env->make_integer(env, 42);
+ }
+ #+end_src
+
+ 在尚未搞清楚 env，nargs，args 以及 data 等参数的含义的情况下，我已经写出
+ foo_answer。学习的过程，要学会临时放弃一些东西。接下来要考虑的问题是，如何让
+ foo_answer 这个 C 函数变成 Elisp 体制内的函数。
+
+ Elisp 手册里提供了示例代码，我针对 foo_answer 对其略作修改并置入
+ emacs_module_init 函数里，如下
+
+ #+begin_src
+ int emacs_module_init (struct emacs_runtime *ert)
+ {
+         emacs_env *env = ert->get_environment(ert);
+         emacs_value func = env->make_function(env, 0, 0, foo_answer, "", NULL);
+         emacs_value symbol = env->intern(env, "foo-anwser");
+         emacs_value args[] = {symbol, func};
+         env->funcall(env, env->intern(env, "defalias"), 2, args);
+         return 0;
+ }
+ #+end_src
+
+ 为了方便代码复制，在本地机器上算出宇宙的终极答案，在此我不厌其烦，给出 foo.c 全
+ 部的代码：
+
+ #+begin_src
+ #include <emacs-module.h>
+ int plugin_is_GPL_compatible;
+
+ emacs_value foo_answer (emacs_env *env,
+                         ptrdiff_t nargs,
+                         emacs_value *args,
+                         void *data)
+ {
+         return env->make_integer(env, 42);
+ }
+
+ int emacs_module_init (struct emacs_runtime *ert)
+ {
+         emacs_env *env = ert->get_environment(ert);
+         emacs_value symbol = env->intern(env, "foo-anwser");
+         emacs_value func = env->make_function(env, 0, 0, foo_answer, "", NULL);
+         emacs_value args[] = {symbol, func};
+         env->funcall(env, env->intern(env, "defalias"), 2, args);
+         return 0;
+ }
+ #+end_src
+
+ 重新编译 foo.c，并将编译所得 foo.so 放到它应该在的目录里。然后，在 Elisp 程序
+ foo.el 里，载入 foo.so，并调用 foo-anwser 函数，即
+
+ #+begin_src
+ (load "newbie" nil t)
+ (load "foo" nil t)
+ (princ\n (foo-anwser))
+
+ 执行 foo.el 程序，
+
+ $ emacs -Q --script foo.el
+
+ 可输出
+
+ 42
+ #+end_src
+*** 城乡结合部
+
+ 上一节的示例代码，大多数都是莫名其妙的。尽管如此，大致上它们的举动无非是将一个
+ Elisp 里一个体制内的符号 foo-anwser 绑定到模块函数 foo_anwser，而真正完成此事的
+ 代码是
+
+ #+begin_src
+ env->funcall(env, env->intern(env, "defalias"), 2, args);
+ #+end_src
+
+ 首先看 env，它是怎么来的？来自 Emacs 运行时 emacs_runtime，即
+
+ #+begin_src
+ emacs_env *env = ert->get_environment(ert);
+ #+end_src
+
+ emacs_runtime 怎么来的呢？是 Emacs 传给 emacs_module_init 函数的。问题追溯至此，
+ 便可以结束了。身处城乡结合部，就不必再问城市是怎么来的了。
+
+ 可以再问的是，env->intern(env, "defalias") 是什么意思？是让 Elisp 解释器派遣一个
+ 符号 defalias 过来。如果 Elisp 解释器所维护的符号表里有没有这个符号，如果没有就
+ 创建一个，然后以 emacs_value 的形式封装这个符号，将其作为 env->intern 的返回值。
+ 简而言之，env->intern 返回一个符号。
+
+ 由于 env->intern(env, "defalias") 是 env->funcall 的参数，那么后者拿到前者返回的
+ 符号，要做什么呢？如果前者返回的符号绑定了一个 Elisp 函数，那么 env->funcall 便
+ 可以通过这个符号调用它绑定的函数。那么，Elisp 符号 defalias 绑定的是一个 Elisp
+ 函数吗？是的。Elisp 函数 defalias 可以用于定义一个函数，类似于 defun，二者的区别
+ 是，defalias 是函数，而 defun 实际上是宏。env->funcall 可以调用函数，但不可以调
+ 用宏。
+
+ env->funcall 要调用 defalias 函数，就需要给它传递两个参数，一个是符号，一个是函
+ 数的定义，以下代码便是为 defalias 函数准备参数：
+
+ #+begin_src
+ emacs_value symbol = env->intern(env, "foo-anwser");
+ emacs_value func = env->make_function(env, 0, 0, foo_answer, "", NULL);
+ emacs_value args[] = {symbol, func};
+ #+end_src
+
+ 基于上述解释，
+
+ #+begin_src
+ env->funcall(env, env->intern(env, "defalias"), 2, args);
+ #+end_src
+
+ 的含义就基本上清晰了。env->funcall 调用了 Elisp 函数 defalias，将 symbol 和 func
+ 这两个参数传递给了 defalias，由 defalias 在 Elisp 环境里，亦即上述代码里几乎无处
+ 不在的 env，将一个符号 foo-anwser 绑定了一个函数 func。
+
+ func 是怎么来的呢？它实际上是一个匿名函数，是 env->make_function 的返回值。这不
+ 奇怪，Elisp 语言可以将函数像数据一样传来传去。env->make_function 创建并返回的，
+ 实际上是一个匿名函数。
+*** 匿名函数
+
+ 匿名函数也叫 Lambda 表达式。在 Elisp 语言里，几乎所有的函数本质上都是匿名函数，
+ 它们之所以有名字，是因为有符号绑定了它们。defalias 的用处就是将一个符号绑定到一
+ 个 Lambda 表达式。例如
+
+ #+begin_src
+ (defalias 'foo
+   (lambda ()
+     (princ\n "Hello world!")))
+ #+end_src
+
+ defalias 将符号 foo 绑定了 Lambda 表达式
+
+ #+begin_src
+ (lambda ()
+   (princ\n "Hello world!"))
+ #+end_src
+
+ 这个 Lambda 表达式就是一个函数，可在终端里输出 Hello world!。
+
+ 如果使用 Elisp 函数 funcall，可以调用 defalias，将 foo 绑定到上述的 Lambda 表达
+ 式，例如
+
+ #+begin_src
+ (funcall 'defalias
+          'foo
+          (lambda ()
+            (princ\n "Hello world")))
+ #+end_src
+
+ 在 Emacs 的动态模块里，用 env->make_function 创建并返回的匿名函数，其定义就是符
+ 合格式要求的 C 函数。因此，上述 Elisp 代码完全可以用 Emacs 动态模块的代码予以模
+ 拟，即
+
+ #+begin_src
+ #include <stdio.h>
+ #include <emacs-module.h>
+ int plugin_is_GPL_compatible;
+
+ emacs_value lambda_func (emacs_env *env,
+                          ptrdiff_t nargs,
+                          emacs_value *args,
+                          void *data)
+ {
+         printf("Hello world\n");
+         return env->make_integer(env, 0);
+ }
+
+ int emacs_module_init (struct emacs_runtime *ert)
+ {
+         emacs_env *env = ert->get_environment(ert);
+         emacs_value symbol = env->intern(env, "foo");
+         emacs_value lambda = env->make_function(env, 0, 0, lambda_func, "", NULL);
+         emacs_value args[] = {symbol, lambda};
+         env->funcall(env, env->intern(env, "defalias"), 2, args);
+         return 0;
+ }
+ #+end_src
+*** emacs_env
+ 在 emacs_module_init 函数里，一旦从 emacs_runtime 里获得 emacs_env，即
+
+ #+begin_src
+ emacs_env *env = ert->get_environment(ert);
+ #+end_src
+
+ 便相当于在 C 程序里得到了一个 Emacs 的全部功能，同时这也意味着，Emacs 可以从 C
+ 程序里得到它想要的东西。所以，前文中我用了一个隐喻「城乡结合部」形容 emacs_env，
+ 它的作用就是沟通 Emacs 和 C 程序，通过它，C 程序里的数据和函数可以传送到 Elisp
+ 的世界里，反过来，Elisp 世界里的的一切也可以通过它传送到 C 程序的世界里。
+
+ 在计算宇宙终极答案的 C 代码里，已经见识了使用 env->make_integer 函数将 C 程序里
+ 的数据 42 封装为 Elisp 世界里的整型数，即
+
+ #+begin_src
+ env->make_integer(env, 42);
+ #+end_src
+
+ 反过来，使用 env->extract_integer 函数可以从 Elisp 世界里的整型数里取出 C 程序需
+ 要的数据，例如
+
+ #+begin_src
+ emacs_value foo = env->make_integer(env, 42);
+ int bar = env->extract_inter(env, foo);
+ #+end_src
+
+ 与整型数据的转换类似，emacs_env 提供的浮点数据交换函数是 make_float 和
+ extract_float。字符串交换
+
+ 从 Elisp 程序向动态模块里的 C 函数传递字符串，后者需要用 copy_string_contents 从
+ emacs_value 对象里提取。例如
+
+ #+begin_src
+ emacs_value foo (emacs_env *env,
+                  ptrdiff_t nargs,
+                  emacs_value *args,
+                  void *data)
+ {
+         char *buf;
+         ptrdiff_t len;
+        
+         env->copy_string_contents(env, args[0], NULL, &len);
+         printf(">>> %ld\n", len);
+        
+         buf = malloc(len);
+         env->copy_string_contents(env, args[0], buf, &len);
+         printf("%s\n", buf);
+         free(buf);
+
+         return env->make_integer(env, 0);
+ }
+ #+end_src
+
+ 需要调用两次 copy_string_contents，第一次调用，用于获取 Elisp 字符串的长度，以便
+ 于在 C 程序里为存放字符串内容而分配足够的内存。第二次调用方是获取 Elisp 字符串内
+ 容，存入 buf 指向的空间。倘若能保证 buf 的空间足够大，copy_string_contents 的第
+ 一次调用可免。
+
+ 由于上述的模块函数 foo 可以接受 1 个参数，因此在 emacs_module_init 函数里关于它
+ 与 Elisp 符号的绑定代码需要指定它的参数的最小和最大个数，即
+
+ #+begin_src
+ emacs_value symbol = env->intern(env, "foo");
+ emacs_value func = env->make_function(env, 1, 1, foo, "", NULL);
+ #+end_src
+
+ 那么，如何将 C 程序里的字符串传递到 Elisp 程序呢？使用 make_string 函数，例如
+
+ #+begin_src
+ emacs_value result = env->make_string(env, buf, strlen(buf));
+ #+end_src
+
+ 下面给出完整的 C 代码以供参考：
+
+ #+begin_src
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <emacs-module.h>
+ int plugin_is_GPL_compatible;
+
+ emacs_value foo (emacs_env *env,
+                  ptrdiff_t nargs,
+                  emacs_value *args,
+                  void *data)
+ {
+         ptrdiff_t len;       
+         env->copy_string_contents(env, args[0], NULL, &len);
+         printf(">>> %ld\n", len);
+        
+         char *buf = malloc(len);
+         env->copy_string_contents(env, args[0], buf, &len);
+         printf("%s\n", buf);
+        
+         emacs_value result = env->make_string(env, buf, strlen(buf));
+         free(buf);
+
+         return result;
+ }
+
+ int emacs_module_init (struct emacs_runtime *ert)
+ {
+         emacs_env *env = ert->get_environment(ert);
+         emacs_value symbol = env->intern(env, "foo");
+         emacs_value func = env->make_function(env, 1, 1, foo, "", NULL);
+         emacs_value args[] = {symbol, func};
+         env->funcall(env, env->intern(env, "defalias"), 2, args);
+         return 0;
+ }
+ #+end_src
+*** 用户指针
+
+ 从 Elisp 程序向动态模块传递 C 指针对象，似乎没有应用场景，因为 Elisp 里没有指针
+ 类型。同理，将动态模块里的 C 指针传递给 Elisp 程序，也没有应用场景，但是可以让
+ Elisp 解释器自动回收动态模块里为 C 指针分配的内存空间，从而使得为 Elisp 写动态模
+ 块不需要关心内存回收问题。
+
+ 假设在动态模块里，有以下内存分配：
+
+ #+begin_src
+ char *buf = malloc(10 * sizeof(char));
+ #+end_src
+
+ 以往，在 C 程序里，需要使用 free 函数回收为 buf 分配的内存：
+
+ #+begin_src
+ free(buf);
+ #+end_src
+
+ 在动态模块里，倘若使用 make_user_ptr 函数创建一个用户指针对象，
+
+ #+begin_src
+ emacs_value bar = env->make_user_ptr(env, free, buf);
+ #+end_src
+
+ 那么 Elisp 解释器便具有了回收 buf 所指向的内存空间的能力，它会在适当时机调用
+ free 函数，释放 buf 指向的空间。
+
+ 为了验证这一点，可以自行定义一个能够在终端输出确认 free 函数被 Elisp 解释器调用
+ 的函数，例如
+
+ #+begin_src
+ void my_free(void *buf)
+ {
+         free(buf);
+         printf("内存释放！\n");
+ }
+ #+end_src
+
+ 然后将用户指针对象的创建代码修改为
+
+ #+begin_src
+ emacs_value bar = env->make_user_ptr(env, my_free, buf);
+ #+end_src
+
+ 下面给出完整的动态模块代码：
+ #+begin_src
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <emacs-module.h>
+ int plugin_is_GPL_compatible;
+
+ void my_free(void *buf)
+ {
+         free(buf);
+         printf("内存释放！\n");
+ }
+
+ emacs_value foo (emacs_env *env,
+                  ptrdiff_t nargs,
+                  emacs_value *args,
+                  void *data)
+ {
+         char *buf = malloc(10 * sizeof(char));
+         emacs_value bar = env->make_user_ptr(env, my_free, buf);
+         return bar;
+ }
+
+ int emacs_module_init (struct emacs_runtime *ert)
+ {
+         emacs_env *env = ert->get_environment(ert);
+         emacs_value symbol = env->intern(env, "foo");
+         emacs_value func = env->make_function(env, 0, 0, foo, "", NULL);
+         emacs_value args[] = {symbol, func};
+         env->funcall(env, env->intern(env, "defalias"), 2, args);
+         return 0;
+ }
+ #+end_src
+
+ 为了确认 buf 指向的空间确实被 Elisp 解释器调用 my_free 函数释放了，需要在 Elisp
+ 程序里强制运行内存回收函数 garbage-collect，否则在示例程序里不容易等到 Elisp 解
+ 释器自动执行内存回收的时机。以下 Elisp 程序
+
+ #+begin_src
+ (load "foo")
+ (foo)
+ (garbage-collect)
+ #+end_src
+
+ 在我的机器上可输出：
+
+ #+begin_src
+ Loading foo (module)...
+ 内存释放！
+ #+end_src
+*** 数组交换
+
+ Elisp 语言提供了数组类型，但是这份教程一直没有用过它。现在到了用它的时候了，因为
+ C 语言也有数组类型。在动态模块里，这两种类型需要交换，从而实现一组数据在动态模块
+ 和 Elisp 程序之间的传递。
+
+ 在 Elisp 程序里，通常可以将向量类型视为数组类型。与创建列表类似，创建向量，有两
+ 种办法：
+
+ #+begin_src
+ (setq a '[0 1 2 3])
+ (setq b (vector 0 1 2 3))
+ #+end_src
+
+ 但是，也许是由于方括号形式的向量构造语法在 Elisp 语言里不像列表符号那样会导致
+ Elisp 解释器存在误节，因此可以去掉引号，即
+
+ #+begin_src
+ (setq a [0 1 2 3])
+ #+end_src
+
+ 使用 elt 或 aref 可以根据下标访问数组元素，下标从 0 开始。例如，访问上述代码构造
+ 的向量 a 的第 3 个元素：
+
+ #+begin_src
+ (elt a 2)
+ (aref a 2)
+ #+end_src
+
+ 使用 aset 函数可以修改数组里某个下表对应的元素的值，例如，将 a 的第 2 个元素修改
+ 为 0：
+
+ #+begin_src
+ (aset a 1 0)
+ #+end_src
+
+ 至此，Elisp 的数组类型就基本介绍完了。
+
+ 将 Elisp 程序里的向量传递给动态模块，需要用到 emacs_env 类型里的三个函数，
+ vec_get，vec_set 以及 vec_size。假设在 Elisp 程序里向动态模块里的一个函数 foo 传
+ 递一个向量：
+
+ #+begin_src
+ (foo [0 1 2 3 4])
+ #+end_src
+
+ 那么，在动态模块里，可以像下面这样实现 foo：
+
+ #+begin_src
+ emacs_value foo (emacs_env *env,
+                  ptrdiff_t nargs,
+                  emacs_value *args,
+                  void *data)
+ {
+         emacs_value bar = args[0];
+         size_t n = env->vec_size(env, bar);
+         env->vec_set(env, bar, 2, env->make_integer(env, 0));
+         for (size_t i = 0; i < n; i++) {
+                 emacs_value j = env->vec_get(env, bar, i);
+                 printf("%ld ", env->extract_integer(env, j));
+         }
+         return env->make_integer(env, 0);
+ }
+ #+end_src
+
+ C 函数 foo 将 Elisp 传递给它的向量的第 2 个元素修改为 0，因此 Elisp 解释器调用了
+ 它之后，在终端里输出的向量的值为
+
+ #+begin_src
+ 0 1 0 3
+ #+end_src
+
+ C 函数对向量元素的修改，本质上是对 Elisp 里向量对象的修改，亦即以下 Elisp 程序
+
+ #+begin_src
+ (let ((a [0 1 2 3]))
+   (foo a)
+   a)
+ #+end_src
+
+ 的求值结果是 [0 1 0 3]，而非 [0 1 2 3]。
+
+ 如何将动态模块里的 C 数组传递给 Elisp 程序呢？Elisp 在 emacs_env 类型里并未提供
+ make_vector 之类的函数，但是，可以通过 emacs_env 类型里的 intern 和 funcall 函数
+ 直接调用 Elisp 函数创建列表、向量、Hash 表等复合数据类型的对象，会有些繁琐，但是
+ 利用这种方法可在动态模块里调用 Elisp 的一切功能，只需综合利用上文给出的知识便可
+ 实现该方法，在此不作赘述了……懒人总是有高明的借口，那就作为一个习题吧。结语
+
+ Elisp 程序能够通过动态模块调用一个能够计算宇宙终极答案的 C 函数，这意味着……这
+ 个教程可能需要结束了。
+** Elisp-12: 兔子洞
+从本章开始，进入这份 Elisp 教程的第三部分。这部分内容侧重于应用，在倘若不得不引
+入没学过的 Elisp 语法之时，则说明所侧重的应用必定是好的。
+*** 一个游戏
+ 现在考虑来写一个很简单的小游戏：在一个一维的世界里寻找兔子洞。
+
+ 该如何表示这个一维世界呢？用缓冲区便可表示。该如何在这个世界里行走呢？在缓冲区内
+ 移动插入点。
+
+ 在这个世界里，如何表示兔子洞呢？这需要三思。
+*** 缓冲区变量
+
+ 我想用两个既不是全局变量也不是局部变量的变量来表示兔子洞的入口和出口。在 Elisp
+ 语言里，这样的变量可以是缓冲区变量。下面是这两个变量的定义：
+ #+begin_src
+ (setq hole-entrance "@#")
+ (setq hole-exit "#@")
+
+ (progn
+   (find-file "world.txt")
+   (make-local-variable 'hole-entrance)
+   (make-local-variable 'hole-exit))
+ #+end_src
+
+ 虽然 hole-entrance 和 hole-exit 一开始是定义成了全局变量，但是在 Elisp 解释器执
+ 行了 find-file 之后，当前缓冲区便是存放 world.txt 文件内容的缓冲区，这两个变量在
+ make-local-variable 的作用下，就变成了当前缓冲区内的变量。
+
+ 任何一个缓冲区都能直接使用同一个全局变量，也将它变成自己的变量，但是各个缓冲区都
+ 会觉得自己可以独占它，修改它的值，而且这种修改对其他缓冲区没有任何影响。就像是一
+ 个人同时出现在多个世界里，他不知道其他世界里的自己是怎样的境况。
+*** 简单的世界
+
+ 现在，已经有了兔子洞的入口和出口的表示形式了，因此可以为上述的游戏随便构造一个世
+ 界：
+
+ #+begin_src
+ ********@#一个兔子洞#@********@#又
+ 一个兔子洞#@**********************
+ ****
+ @#
+                    这也是一个兔子洞
+ #@****************
+ #+end_src
+
+ 这个世界里，有三个兔子洞。我将这个世界保存在文本文件 world.txt 里，待 Elisp 程序
+ 使用 (find-file) 将其载入缓冲区。接下来的任务便是如何在存放这个世界的缓冲区内找
+ 出这些兔子洞。search-forward
+
+ 清楚了要解决的问题是什么，还有清楚自己有哪些资源可以利用以及如何利用，此二者的充
+ 分结合，便诞生了算法。要找出兔子洞，可以利用 Elisp 函数 search-forward，同之前用
+ 过的 re-search-forward 相似，可在缓冲区内前向递进搜索与指定文本相匹配的文本，只
+ 是后者支持正则表达式匹配。在寻找兔子洞的过程中，不需要用正则表达式，因此用
+ search-forward 更为适合。
+
+ 现在试试 search-forward：
+
+ #+begin_src
+ (setq hole-entrance "@#")
+ (setq hole-exit "#@")
+
+ (progn
+   (find-file "world.txt")
+   (make-local-variable 'hole-entrance)
+   (search-forward hole-entrance))
+ #+end_src
+
+ Elisp 解释器对上述程序的求值结果是 11，这正是第一个兔子洞入口 @# 之后的位置，亦
+ 即 search-forward 返回的结果是缓冲区内与 hole-entrance 的值匹配的文本的末尾位置。
+
+ 如果 search-forward 在缓冲区内未能发现与指定文本相匹配的文本，默认情况下它会报错。
+ 我觉得动不动就报错，太小题大作了，找不到就找不到，让它返回 nil 就好了，这需要将
+ search-forward 的第三个参数设为 t，即
+
+ #+begin_src
+ (search-forward hole-entrance nil t)
+ #+end_src
+
+ 要设置第三个参数，不得不设置第二个参数。从现在开始要记住，Elisp 函数的参数允许可
+ 选，但是倘若想设置其中的某个参数，但是又不知它前面的可选参数如何设置的时候，就将
+ 它们设为 nil 即可，因为 nil 是所有变量的默认值，函数的参数是变量。一旦
+ search-forward 能够返回 nil，便可以通过条件表达式，去接管这种查找失败的情况。
+
+ 由于 search-forward 不仅能返回缓冲区内匹配文本的末尾位置，同时也将插入点移动到这
+ 一位置，因此 search-forward 便继续搜索下一个兔子洞，亦即
+
+ #+begin_src
+ (progn
+   (find-file "world.txt")
+   (make-local-variable 'hole-entrance)
+   (make-local-variable 'hole-exit)
+   (if (search-forward hole-entrance nil t)
+       (search-forward hole-entrance nil t)))
+ #+end_src
+
+ 可以发现第二个兔子洞的入口。
+
+ 同理，下面的代码能发现第三个兔子洞的入口：
+
+ #+begin_src
+ (progn
+   (find-file "world.txt")
+   (make-local-variable 'hole-entrance)
+   (make-local-variable 'hole-exit)
+   (if (search-forward hole-entrance nil t)
+       (if (search-forward hole-entrance nil t)
+           (search-forward hole-entrance))))
+ #+end_src
+*** 搜索全部的兔子洞
+
+ 上一节反复运用 search-forward 搜索兔子洞入口的过程显然是一个典型的迭代过程，因此
+ 可以用 while 表达式简化，即
+
+ #+begin_src
+ (load "newbie")
+
+ (setq hole-entrance "@#")
+ (setq hole-exit "#@")
+
+ (progn
+   (find-file "world.txt")
+   (make-local-variable 'hole-entrance)
+   (make-local-variable 'hole-exit)
+   (let (@-extrance)
+     (while (setq @-entrance (search-forward hole-entrance nil t))
+       (princ\n (format "兔子洞入口：%d" @-entrance)))))
+ #+end_src
+
+ 还记得 newbie.el 库和 princ\n 宏吗？忘记了，就再回顾一下前面第 10 章的内容吧！
+
+ 执行这个程序，在我的机器上的输出为
+
+ #+begin_src
+ Loading /home/garfileo/.my-scripts/elisp/newbie.el (source)...
+ 兔子洞入口：11
+ 兔子洞入口：28
+ 兔子洞入口：67
+ #+end_src
+
+ 注意，setq 可以用作条件表达式，因为它可返回变量绑定的值，要么是 nil，要么不是
+ nil，后者与 t 等价。
+
+ 对上述程序略作修改，
+
+ #+begin_src
+ (load "newbie")
+
+ (setq hole-entrance "@#")
+ (setq hole-exit "#@")
+
+ (progn
+   (find-file "world.txt")
+   (make-local-variable 'hole-entrance)
+   (make-local-variable 'hole-exit)
+   (let (@-extrance @-exit)
+     (while (progn
+              (setq @-entrance (search-forward hole-entrance nil t))
+              (setq @-exit (search-forward hole-exit nil t)))
+       (princ\n (format "兔子洞 (%d %d)" @-entrance @-exit)))))
+ #+end_src
+
+ 便可找出所有兔子洞的入口和出口了，因为在我的机器上的输出结果是
+
+ #+begin_src
+ Loading /home/garfileo/.my-scripts/elisp/newbie.el (source)...
+ 兔子洞 (11 18)
+ 兔子洞 (28 37)
+ 兔子洞 (67 98)
+ #+end_src
+*** 结语
+
+ 游戏远未结束，兔子洞是个很复杂的所在。
