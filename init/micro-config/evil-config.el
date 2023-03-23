@@ -14,8 +14,8 @@
 (require 'evil)
 ;;默认不启动evil，手动启动
 (evil-mode t)
-;(evil-set-undo-system 'undo-redo)
-(evil-set-undo-system 'undo-tree) ;;compat with emacs 24.3
+(evil-set-undo-system 'undo-redo)    ;;perfer use undo-redo
+;;(evil-set-undo-system 'undo-tree) ;;compat with emacs 24.3
 ;;; ESC to switch back normal-state
 (define-key evil-insert-state-map [escape] 'evil-normal-state)
 ;;; TAB to indent in normal-state
