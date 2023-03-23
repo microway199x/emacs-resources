@@ -40,8 +40,9 @@
 
 (add-hook 'emacs-startup-hook 
           (load (concat micro-config-path "common-config")))
-(add-hook 'emacs-startup-hook 
-          (load (concat micro-config-path "undo-plugin-config")))
+;;perfer use default undo-redo
+;;(add-hook 'emacs-startup-hook 
+;;          (load (concat micro-config-path "undo-plugin-config")))
 
 (add-hook 'emacs-startup-hook 
           (load (concat micro-config-path "evil-config")))
@@ -70,8 +71,8 @@
 ;;show put before bbyac-config, for bbyac.el require browse-kill-ring
 (add-hook 'emacs-startup-hook 
                  (load (concat micro-config-path "browse-kill-ring-config")))
-(add-hook 'emacs-startup-hook 
-                 (load (concat micro-config-path "bbyac-config")))
+;;(add-hook 'emacs-startup-hook 
+;;                 (load (concat micro-config-path "bbyac-config")))
 
 ;;* 2. program mode config   ;;;;;;;;;;;;;;;;;;;;;;;
 ;;(eval-after-load 'c-mode 
