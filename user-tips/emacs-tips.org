@@ -1,5 +1,4 @@
 * 高效编辑tips: Emacs
-  
 * Emacs 插件开发手册
 来源: https://manateelazycat.github.io/emacs/2022/11/18/write-emacs-plugin.html
 
@@ -663,3 +662,17 @@ step-3:输入要替换的字符, 比如替换为 directory_\2
 + eval-after-load：根据入口条件，只执行一次，
 + add-hook：每次入口条件满足时，都会执行，可以用于改变每次执行时的行为
   等
+* windows路径空格问题
+ 1. 当windows路径中有空格时，使用 “path xxx”,双引号包裹住对应的字符文件名。
+    #+begin_src
+      C:/"program files"/snipaste/snipaste.exe
+      比如shell-command调用时，
+      (shell-command "C:/\"program files\"/snipaste/snipaste.exe")
+    #+end_src
+* shell-command异步调用问题
+    #+begin_src
+      比如shell-command调用时，末尾添加 & ,表示异步命令，
+      与async-shell-command相同
+      (shell-command command &)
+    #+end_src
+ 
