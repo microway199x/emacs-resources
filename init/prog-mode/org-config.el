@@ -74,8 +74,8 @@
 (setq org-log-done 'time) ;;记录done的时间
 (setq org-todo-keywords
   '((type "工作---(w)" "学习---(s)" "休闲---(l)" "|")
-    (sequence "?"  "|"  "#")
-    (sequence "TODO===(t)" "IMDO===" "ONGO>>>(o)" "|" "DONE---(d!)" "ABORT--(a!)")))
+    (sequence "?" ">" "=" "|"  "#")
+    (sequence "TODO(t)" "IMDO" "ONGO(o)" "|" "DONE(d!)" "ABORT(a!)")))
 ;; (setq org-todo-keywords
 ;;   '((type "工作---(w!)" "学习---(s!)" "休闲---(l!)" "|")
 ;;     (sequence "TODO===(t!)" "IMDO===" "ONGO>>>(o!)" "|" "DONE---(d!)" "ABORT--(a!)")))
@@ -85,12 +85,14 @@
 (setq org-todo-keyword-faces 
       '(
         ("?" . "red")
+        (">" . "skyblue")
+        ("=" . "red")
         ("#" . "green")
-	    ("TODO===" . "orange")
-        ("IMDO===" . "red")
-        ("ONGO>>>" . "skyblue")
-        ("DONE---" . "green")
-        ("ABORT--" . "gray")))
+	    ("TODO" . "red")
+        ("IMDO" . "red")
+        ("ONGO" . "skyblue")
+        ("DONE" . "green")
+        ("ABORT" . "gray")))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
