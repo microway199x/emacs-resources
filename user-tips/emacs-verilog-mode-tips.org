@@ -8,7 +8,7 @@
   emacs --batch test.v -f verilog-batch-auto
 #+end_src
 * 函数
-** verilog-quto-tieoff                                                :常用:
+** verilog-auto-tieoff                                                :常用:
 + 将未使用的输出tieoff，经常用于包空module;
    #+begin_src
        verilog-auto-tieoff       for AUTOTIEOFF output tieoffs ///用于将输出固接
@@ -43,7 +43,7 @@
   #+begin_src
     /*AUTOINOUTPARAM("ExampMain","^i")*/
   #+end_src
-** verilog-auto-instert-last/verilog-auto-insert-lisp
+** verilog-auto-instert-last/verilog-auto-insert-lisp                 :脚本:
 + xxx-last为在执行verilog-auto之后，再插入执行LISP代码片段
 + xxx-lisp为在执行verilog-auto的时候，插入执行LISP的代码片段
 + [ ] 可以用来自动插入代码模板，以及解析代码片段等
@@ -191,7 +191,202 @@
 + verilog-auto-inout-module:用于将模块所有输入输出信号全部提取出来，用于需要空壳场景时使用。
 ** verilog-load-file-at-point
 + 用于加载当前光标下的模块对应的文件，一般不使用，可以用于快速跳转
+* 在verilog文件中使用自定义函数的几种方式                              :效率:
+1. 在verilog-mode使用时，需要较复杂的函数管理或者生成代码时，通过一下集中方式添
+   加自定义函数，提高效率, 并且通过在“AUTO_TEMPLATE”中通过@“（elisp脚本）”调
+   用函数
+   + 通过将函数添加在emacs配置中，然后可以在 *所有verilog* 文件中调用对应的函数
+   + 通过AUTO_LISP添加函数，并且在 *当前verilog文件中调用* ,
+    #+begin_src
+      ///如下例子，获取当前instance名字最后的数字部分
+      /* AUTO_LISP(defun getparam2 (strg)
+          (string-match "[^0-9]*[0-9]+[^0-9]*\\([0-9]+\\)" strg)
+          (match-string 1 strg)) */
+      /* InstModule AUTO_TEMPLATE (
+          .in            (a_@"(getparam2 vl-cell-name)"),  //例化的信号名为"a_<例化模块名的最后的数字部分>"
+          .in_0_xx_[0-9] (b_@"(getparam2 vl-name)"),       //例化的信号名为"b_<信号名最后的数字部分>"
+          );
+          */
+      InstModule u_inst_0_yy_1001 (
+          .in         (a_1001),
+          .in_0_xx_00 (b_00),
+          .in_0_xx_01 (b_01),
+          .in_0_xx_02 (b_02),
+          .in_0_xx_03 (b_03),
+          .in_0_xx_04 (b_04),
+          );
+          */
+    #+end_src
+   + 将verilog文件需要的elisp函数独立问一个el文件，并且在需要的verilog文件中使
+     用，从而elisp函数可以在多个文件中使用，
+    #+begin_src
+      ///a: elisp函数集文件
+     (defun my-func (z) "Documentation: return z"
+        z)
+     ;; ...
+     (provide `my-vm-library)
+
+     ///b: Verilog文件中调用函数集
+
+     /*AUTO_LISP(require 'my-vm-library "path/to/my-vm-library.el")*/
+
+    #+end_src
+   + 在文件尾，通过eval：添加函数，可以添加多个函数，通过eval：隔开,并且可以通过eval设置变量
+    #+begin_src
+      module elist_func_eval_test();
+
+      //通过模板中添加“[]”，自动展开信号位宽
+      //信号名正则表达式捕获，通过 "\(xxx\)" 捕获xxx匹配的信号名，并通过\1,\2变量获取匹配的分组，并使用
+      //也可以通过@符号，以及正则匹配的方式获取AUTO_TEMPLATE的正则匹配
+      /*test_module AUTO_TEMPLATE(
+          .a_[0-9]*              (@"(upperx vl-name)"[]),   /// 调用upperx函数，将所有"a_<数字>"的信号例化连接为大写的信号名上
+          .b_[0-9]*              (@"(tieoff vl-dir)"),    /// 调用tieoff函数，将所有"b_<数字>"的信号例化输入固接为0，输出悬空
+          .c_\([0-9]*\)          (d_\1[]            ),    /// 获取模块接口"c_<数字>"中的数字，并将接口例化为"d_<数字>",并通过“[]”展开位宽
+      );
+      */
+      test_module u_test(
+      .a_00          (A_00         ),//信号位宽为1
+      .a_01          (A_01[1:0]    ),//信号位宽为2
+      .a_02          (A_02[2:0]    ),//信号位宽为3
+      .b_00          ({1{1'b0}}    ),//信号位宽为1，固接
+      .b_01          ({2{1'b0}}    ),//信号位宽为2，固接
+      .b_02          ({3{1'b0}}    ),//信号位宽为3，固接
+      .b_03          (             ),//信号位宽为4，输出，悬空
+      .c_00          (d_00         ),//信号位宽为1
+      .c_01          (d_01[1:0]    ),//信号位宽为2
+      .c_02          (d_02[2:0]    ),//信号位宽为3
+      );
+
+      endmodule
+  /*
+     Local Variables:
+     verilog-library-flags:("-y incdir1/ -y incdir2/")
+     verilog-library-directories:("." "dir1" "dir2" ...)
+     eval: (defun upperx (name)
+               (uppercase name))
+     eval: (defun tieoff (dir)
+               (if (string-equal dir "input")
+                   (concat "{" vl-width "{1'b0}}")
+                   ""))
+    eval:(setq verilog-auto-output-ignore-regexp (concat
+       "^\\("
+       "signal1_.*"
+       "\\|signal2_.*"
+       "\\)$"
+       )))
+     End:
+   */
+
+    #+end_src
+
+* 在verilog文件中AUTO搜索文件路径以及文件添加
+#+begin_src
+   ///通过 verilog-library-flags添加搜索的文件夹
+   // Local Variables:
+   // verilog-library-flags:("-y incdir1/ -y incdir2/")
+   // End:
+
+   ///通过 verilog-library-directories添加搜索的文件夹
+   // Local Variables:
+   // verilog-library-directories:("." "dir1" "dir2" ...)
+   // End:
+   
+   ///通过 verilog-library-flags添加搜索的文件夹的list文件
+   
+   // Local Variables:
+   // verilog-library-flags:("-f ../../up_to_top/include/input.vc")
+   // End:
+#+end_src
+
+* 在verilog文件中通过eval设置Elisp变量设置
+*"eval：(elisp函数)"：通过eval可以求值任意elisp函数或者变量；*
+#+begin_src
+// Local Variables:
+// eval:(setq verilog-library-directories (list (substitute-in-file-name "$W") ))
+// End:
+#+end_src
+   
+*  通过正则匹配，高效例化模块
+  1. instance 模块名正则匹配
+     #+begin_src
+       //也可以通过@符号，以及正则匹配的方式获取AUTO_TEMPLATE(对应的instance模块名、vl-cell-name)的正则匹配
+       //"vl-cell-name"可以在@“(elisp脚本)”中直接使用和求值
+       /* InstName AUTO_TEMPLATE <optional "REGEXP"> (
+                .sig1   (sigx[@]),
+                .sig2   (sigy[@"(% (+ 1 @) 4)"]),
+                );
+        */
+       ///example 
+        /* InstModule AUTO_TEMPLATE "_\([a-z]+\)" (
+                .ptl_mapvalidx          (@_ptl_mapvalid),
+                .ptl_mapvalidp1x        (ptl_mapvalid_@),
+                );
+        */
+        InstModule ms2_FOO (/*AUTOINST*/);
+        InstModule ms2_BAR (/*AUTOINST*/);
+
+      /// Typing M-x verilog-auto will make this into: 
+
+        InstModule ms2_FOO (/*AUTOINST*/
+            // Outputs
+            .ptl_mapvalidx              (FOO_ptl_mapvalid),
+            .ptl_mapvalidp1x            (ptl_mapvalid_FOO));
+        InstModule ms2_BAR (/*AUTOINST*/
+            // Outputs
+            .ptl_mapvalidx              (BAR_ptl_mapvalid),
+            .ptl_mapvalidp1x            (ptl_mapvalid_BAR));
+
+
+     #+end_src
+  2. instance 模块接口正则匹配
+     #+begin_src
+       module elist_func_eval_test();
+
+       //通过模板中添加“[]”，自动展开信号位宽
+       //信号名正则表达式捕获，通过 "\(xxx\)" 捕获xxx匹配的信号名，并通过\1,\2变量获取匹配的分组，并使用
+       //也可以通过@符号，以及正则匹配的方式获取AUTO_TEMPLATE(对应的instance模块名、vl-cell-name)的正则匹配
+       /*test_module AUTO_TEMPLATE(
+           .a_[0-9]*              (@"(upperx vl-name)"[]),   /// 调用upperx函数，将所有"a_<数字>"的信号例化连接为大写的信号名上
+           .b_[0-9]*              (@"(tieoff vl-dir)"),    /// 调用tieoff函数，将所有"b_<数字>"的信号例化输入固接为0，输出悬空
+           .c_\([0-9]*\)          (d_\1[]            ),    /// 获取模块接口"c_<数字>"中的数字，并将接口例化为"d_<数字>",并通过“[]”展开位宽
+       );
+       */
+       test_module u_test(
+       .a_00          (A_00         ),//信号位宽为1
+       .a_01          (A_01[1:0]    ),//信号位宽为2
+       .a_02          (A_02[2:0]    ),//信号位宽为3
+       .b_00          ({1{1'b0}}    ),//信号位宽为1，固接
+       .b_01          ({2{1'b0}}    ),//信号位宽为2，固接
+       .b_02          ({3{1'b0}}    ),//信号位宽为3，固接
+       .b_03          (             ),//信号位宽为4，输出，悬空
+       .c_00          (d_00         ),//信号位宽为1
+       .c_01          (d_01[1:0]    ),//信号位宽为2
+       .c_02          (d_02[2:0]    ),//信号位宽为3
+       );
+
+       endmodule
+   /*
+      Local Variables:
+      verilog-library-flags:("-y incdir1/ -y incdir2/")
+      verilog-library-directories:("." "dir1" "dir2" ...)
+      eval: (defun upperx (name)
+                (uppercase name))
+      eval: (defun tieoff (dir)
+                (if (string-equal dir "input")
+                    (concat "{" vl-width "{1'b0}}")
+                    ""))
+     eval:(setq verilog-auto-output-ignore-regexp (concat
+        "^\\("
+        "signal1_.*"
+        "\\|signal2_.*"
+        "\\)$"
+        )))
+      End:
+    */
+
+     #+end_src
 
 * reference 
 https://veripool.org/verilog-mode/help/#verilog-compiler
 https://veripool.org/verilog-mode/help/
+https://github.com/veripool/verilog-mode/blob/master/FAQ.rst
