@@ -43,5 +43,17 @@
 ;; remove all keybindings from insert-state keymap, use emacs-state when editing
 ;; (setcdr evil-insert-state-map nil)
 
+(setq original-background (face-attribute 'mode-line :background))
+;;(setq normal-state-background "76eec6")
+;;(setq normal-state-background "aquamarine2")
+(setq normal-state-background "pale green")
+(add-hook 'evil-normal-state-entry-hook
+          (lambda ()
+            (set-face-attribute 'mode-line nil :background normal-state-background)))
+
+(add-hook 'evil-normal-state-exit-hook
+          (lambda ()
+            (set-face-attribute 'mode-line nil :background original-background)))
+
 
 (provide 'evil-config)
