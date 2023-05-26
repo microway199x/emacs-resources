@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;ÉèÖÃEvil ctrl+z ½øĞĞemacs vimÖ®¼äµÄÇĞ»» 
-; C-o°´¼üµ÷ÓÃvim¹¦ÄÜ£¨¾ÍÊÇÁÙÊ±½øÈënormalÄ£Ê½£¬È»ºó×Ô¶¯»ØÀ´£© 
+;;è®¾ç½®Evil ctrl+z è¿›è¡Œemacs vimä¹‹é—´çš„åˆ‡æ¢ 
+; C-oæŒ‰é”®è°ƒç”¨vimåŠŸèƒ½ï¼ˆå°±æ˜¯ä¸´æ—¶è¿›å…¥normalæ¨¡å¼ï¼Œç„¶åè‡ªåŠ¨å›æ¥ï¼‰ 
 ; C-o 3dd C-o dib C-o yy C-o p C-o f 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun micro-evil-dir-set()
@@ -12,7 +12,7 @@
 (micro-evil-dir-set)
 
 (require 'evil)
-;;Ä¬ÈÏ²»Æô¶¯evil£¬ÊÖ¶¯Æô¶¯
+;;é»˜è®¤ä¸å¯åŠ¨evilï¼Œæ‰‹åŠ¨å¯åŠ¨
 (evil-mode t)
 (evil-set-undo-system 'undo-redo)    ;;perfer use undo-redo
 ;;(evil-set-undo-system 'undo-tree) ;;compat with emacs 24.3
@@ -30,12 +30,12 @@
 
 ;; (setq evil-default-state 'emacs)  ;;default is vim-mode ,use this set to emacs-mode default
 ;; (define-key evil-emacs-state-map (kbd "C-o") 'evil-execute-in-normal-state)
-;; ÏÂÃæ4ĞĞÊÇÉèÖÃÊ¹ÓÃC-d×÷ÎªESC°´¼ü£¬Õâ¸ö×Ô¼º¿´°É
+;; ä¸‹é¢4è¡Œæ˜¯è®¾ç½®ä½¿ç”¨C-dä½œä¸ºESCæŒ‰é”®ï¼Œè¿™ä¸ªè‡ªå·±çœ‹å§
 ;; (define-key evil-insert-state-map (kbd "C-d") 'evil-change-to-previous-state)
 ;; (define-key evil-normal-state-map (kbd "C-d") 'evil-force-normal-state)
 ;; (define-key evil-replace-state-map (kbd "C-d") 'evil-normal-state)
 ;; (define-key evil-visual-state-map (kbd "C-d") 'evil-exit-visual-state)
-;; ÒÔÏÂÉèÖÃÊ±Ê¹ÓÃt×÷Îª¶à¼ôÌù°åµÄÆğÊ¼°´¼ü£¬±ÈÈç tay(²»ÊÇ "ayÅ¶) tap(¾ÍÊÇ"apÀ²)~
+;; ä»¥ä¸‹è®¾ç½®æ—¶ä½¿ç”¨tä½œä¸ºå¤šå‰ªè´´æ¿çš„èµ·å§‹æŒ‰é”®ï¼Œæ¯”å¦‚ tay(ä¸æ˜¯ "ayå“¦) tap(å°±æ˜¯"apå•¦)~
 ;; (define-key evil-normal-state-map "t" 'evil-use-register) 
 ;; (setq evil-toggle-key "")	; remove default evil-toggle-key C-z, manually setup later
 ;; (setq evil-want-C-i-jump nil)	; don't bind [tab] to evil-jump-forward
@@ -44,7 +44,7 @@
 ;; (setcdr evil-insert-state-map nil)
 
 (setq original-background (face-attribute 'mode-line :background))
-;;(setq normal-state-background "76eec6")
+;;(setq normal-state-background "#76eec6")
 ;;(setq normal-state-background "aquamarine2")
 (setq normal-state-background "pale green")
 (add-hook 'evil-normal-state-entry-hook
