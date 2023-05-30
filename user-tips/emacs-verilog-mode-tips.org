@@ -306,7 +306,7 @@
 // End:
 #+end_src
    
-*  通过正则匹配，高效例化模块
+* 通过正则匹配，高效例化模块
   1. instance 模块名正则匹配
      #+begin_src
        //也可以通过@符号，以及正则匹配的方式获取AUTO_TEMPLATE(对应的instance模块名、vl-cell-name)的正则匹配
@@ -386,6 +386,134 @@
 
      #+end_src
 
+* 替换include文件中的define值，或者指定文件的define值 --> 显示变量
+1. verilog-auto-read-includes设置为true，但是设置完成后，不会在接口/例化时替换掉
+   `define-xxx的符号。不能显示的计算和表达出信号位宽和含义。
+2. verilog-read-defines/verilog-read-includes和上一点的行为相同。
+3. 所以通过如下方法将变量中的define替换为设置的“变量/符号”。
+   1. 方式一： 直接替换define变量,但是不会化简位宽表达式
+         #+begin_src verilog
+           ///test_define.vh中的内容
+           `define WIDTH 8
+           `define PW    16
+           `define DW    64
+           `define AW    32
+           ///test2_define.vh中的内容
+           `define HANDSHAKE      axi4_handshake
+           `define HANDSHAKE_B    axi3_handshake
+           `define HW             4
+         #+end_src 
+      #+begin_src verilog
+         `include "test_define.vh"
+         `include "test2_define.vh"
+
+         module inst_module(
+            input [`WIDTH-1 :0 ] a1,
+            input [`WIDTH+1 :0 ] a2,
+            input [`PW-1 :0 ]    b1,
+            input [`DW-1 :0 ]    data,
+            input [`AW-1 :0 ]    addr,
+            input                `HANDSHAKE,   ///can expand?
+            input [`HW-1 :0 ]    `HANDSHAKE_B, ///can expand?
+           );
+          ,*/
+          );
+
+         ...
+         endmodule
+
+         module example(
+            ...
+            //例化模块，并将所有definr符号替换为 “define value”
+          /* inst_module AUTO_TEMPLATE (
+             ..*            (@"(verilog-symbol-detick-test (concat vl-name vl-bits))"),
+           );
+          */
+           inst_module u_inst (/*AUTOINST*/
+               .a1                   (a1[8-1:0]),
+               .a2                   (a2[8+1:0]),
+               .b1                   (b1[16-1:0]),
+               .data                 (data[64-1:0]),
+               .addr                 (addr[32-1:0]),
+               .`HANDSHAKE           (axi4_handshake),     
+               .`HANDSHAKE_B         (axi3_handshake[4-1:0]),     
+          );
+
+         ...
+         endmodule
+        //Local Variables:
+        //verilog-library-flags:("-y incdir1/ -y incdir2/")
+        //verilog-library-directories:("." "path1/dir1" "path2/dir2" ...)
+        //End:
+      #+end_src 
+   2. 方式二： 替换define变量,然后化简位宽表达式
+         #+begin_src verilog
+           ///test_define.vh中的内容
+           `define WIDTH 8
+           `define PW    16
+           `define DW    64
+           `define AW    32
+           ///test2_define.vh中的内容
+           `define HANDSHAKE      axi4_handshake
+           `define HANDSHAKE_B    axi3_handshake
+           `define HW             4
+         #+end_src 
+      #+begin_src verilog
+         `include "test_define.vh"
+         `include "test2_define.vh"
+
+         module inst_module(
+            input [`WIDTH-1 :0 ] a1,
+            input [`WIDTH+1 :0 ] a2,
+            input [`PW-1 :0 ]    b1,
+            input [`DW-1 :0 ]    data,
+            input [`AW-1 :0 ]    addr,
+            input                `HANDSHAKE,   ///can expand?
+            input [`HW-1 :0 ]    `HANDSHAKE_B, ///can expand?
+           );
+          ,*/
+          );
+
+         ...
+         endmodule
+
+         module example(
+            ...
+            //例化模块，并将所有definr符号替换为 “define value”
+            //并且根据表达式，简化位宽表达时候
+          /* inst_module AUTO_TEMPLATE (
+             ..*            (@"(verilog-symbol-detick-test vl-name)"@"(calc-expression vl-bits)"),
+           );
+          ,*/
+           inst_module u_inst (/*AUTOINST*/
+               .a1                   (a1[7:0]),
+               .a2                   (a2[9:0]),
+               .b1                   (b1[15:0]),
+               .data                 (data[63:0]),
+               .addr                 (addr[31:0]),
+               .`HANDSHAKE           (axi4_handshake),     
+               .`HANDSHAKE_B         (axi3_handshake[3:0]),     
+          );
+
+         ...
+         endmodule
+        //Local Variables:
+        //verilog-library-flags:("-y incdir1/ -y incdir2/")
+        //verilog-library-directories:("." "path1/dir1" "path2/dir2" ...)
+        //eval: (defun calc-expression (txta)
+        //          (if (equal nil txta)
+        //              ""
+        //              (progn 
+        //                   (setq ewid (verilog-make-width-expression
+        //                                   (verilog-simplify-range-expression (verilog-symbol-detick-text txta))))
+        //                   (if (equal ewid "1")
+        //                       ""
+        //                       (verilog-simplify-range-expression (verilog-symbol-detick-text txta)))
+        //              )))
+        //              
+        //End:
+      #+end_src 
+   #+end_src 
 * reference 
 https://veripool.org/verilog-mode/help/#verilog-compiler
 https://veripool.org/verilog-mode/help/

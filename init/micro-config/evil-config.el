@@ -19,7 +19,7 @@
 ;;; ESC to switch back normal-state
 (define-key evil-insert-state-map [escape] 'evil-normal-state)
 ;;; TAB to indent in normal-state
-(define-key evil-normal-state-map (kbd "TAB") 'indent-for-tab-command)
+;;; (define-key evil-normal-state-map (kbd "TAB") 'indent-for-tab-command)
 ;    
 ;;; Use j/k to move one visual line insted of gj/gk
 (define-key evil-normal-state-map (kbd "<remap> <evil-next-line>") 'evil-next-visual-line)
@@ -42,6 +42,18 @@
 ;;    
 ;; remove all keybindings from insert-state keymap, use emacs-state when editing
 ;; (setcdr evil-insert-state-map nil)
+
+;;{{ Emacs 28.1 后 EVIL，org-mode无法折叠问题
+(setq evil-want-C-i-jump nil)
+(global-unset-key (kbd "TAB"))
+(defun v-org-specify-config()
+    (setq org-adapt-indentation t)
+    (define-key evil-normal-state-map (kbd "TAB") 'org-cycle))
+
+(add-hook 'org-mode-hook 'v-org-specify-config)
+(define-key evil-normal-state-map (kbd "TAB") 'org-cycle)
+(global-set-key (kbd "TAB") 'org-cycle)
+;;}}
 
 (setq original-background (face-attribute 'mode-line :background))
 ;;(setq normal-state-background "#76eec6")

@@ -126,13 +126,6 @@
 (setq org-startup-indented t)
 (require 'ox-freemind)
 
-;; Emacs 28.1 后 EVIL，org-mode无法折叠问题
-(defun v-org-specify-config()
-    (setq org-adapt-indentation t)
-    (define-key evil-normal-state-map (kbd "TAB") 'org-cycle)
-)
-
-(add-hook 'org-mode-hook 'v-org-specify-config)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;org setting end here
 (provide 'org-config)
