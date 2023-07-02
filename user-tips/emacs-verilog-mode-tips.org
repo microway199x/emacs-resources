@@ -514,6 +514,76 @@
         //End:
       #+end_src 
    #+end_src 
+* 修改verilog-mode文件，format对齐例化模块的连线信号
+1. 由于例化模块时，输出AUTOINST模块信号对于右边括号不对齐，导致看代码时比较难受，
+   尤其是信号名较长时，导致右边括号与相邻行的信号混在一起。
+
+   [[./_images_emacs-verilog-mode-tips.org/20230702133736.png]]
+
+2. 在填写AUTO_TEMPLATE时，verilog-mode会将信号结尾的空格也一并生成，导致生成的代
+   码更乱，
+
+   [[./_images_emacs-verilog-mode-tips.org/20230702151347.png]]
+
+   [[./_images_emacs-verilog-mode-tips.org/20230702154209.png]]
+3. 所以修改Verilog-mode中的产生连线信号的函数，去除AUTO_TEMPLAE中信号结尾的空格，
+   并且让输出信号对齐。
+   [[./_images_emacs-verilog-mode-tips.org/20230702151514.png]]
+   #+begin_src elisp
+     ;;;修改verilog-auto-inst-port函数，
+     (defun verilog-auto-inst-port (section port-st indent-pt moddecls tpl-list tpl-num
+                                       for-star par-values)
+      ;; Replace @ and [] magic variables in final output
+       (setq tpl-net (verilog-string-replace-matches "@" tpl-num nil nil tpl-net))
+       (setq tpl-net (verilog-string-replace-matches "\\[\\]\\[\\]" dflt-bits nil nil tpl-net))
+       (setq tpl-net (verilog-string-replace-matches "\\[\\]" vl-bits nil nil tpl-net)))
+     ;;;<修改点>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+     ;;;USER-CHANGED MICRO add for template has many spaces
+       (setq tpl-net (format "%-55s" (replace-regexp-in-string "[ ]*$" "" tpl-net)))
+     ;; Insert it
+       (when (or tpl-ass (not verilog-auto-inst-template-required))
+          (verilog--auto-inst-first indent-pt section)
+          (indent-to indent-pt)
+          (insert "." port)
+          (unless (and verilog-auto-inst-dot-name
+                    (equal port tpl-net))
+          (indent-to verilog-auto-inst-column)
+          (insert "(" tpl-net ")"))
+           (insert ",")
+   #+end_src
+
+     [[./_images_emacs-verilog-mode-tips.org/20230702152013.png]]
+4. 同理，修改input/output等信号定义输出位宽，输出效果如下：
+   [[./_images_emacs-verilog-mode-tips.org/20230702154730.png]]
+
+   [[./_images_emacs-verilog-mode-tips.org/20230702154751.png]]
+
+   #+begin_src elisp
+           ;;;修改函数
+      (defun verilog-insert-definition (modi sigs direction indent-pt v2k &optional dont-sort)
+        "Print out a definition for MODI's list of SIGS of the given DIRECTION,
+         with appropriate INDENT-PT indentation.  If V2K, use Verilog 2001 I/O
+         format.  Sort unless DONT-SORT.  DIRECTION is normally wire/reg/output.
+         When MODI is non-null, also add to modi-cache, for tracking."
+
+     
+       ;;;<USER MICRO changed> (insert (if v2k "," ";"))
+       (if (or (not verilog-auto-wire-comment)
+               (not (verilog-sig-comment sig))
+               (equal "" (verilog-sig-comment sig)))
+       ;;;{<USER MICRO changed> (insert (if v2k "," ";"))
+       ;;;(insert  "\n")
+       (insert (concat (if v2k "," ";") "\n"))
+       ;;;(indent-to (max 48 (+ indent-pt 40)))
+       (indent-to (max 80 (+ indent-pt 66)))
+       ;;;(verilog-insert "// " (verilog-sig-comment sig) "\n"))
+          (verilog-insert (if v2k "," ";") "// " (verilog-sig-comment sig) "\n"))
+       ;;;}<USER MICRO changed> (insert (if v2k "," ";"))
+         (setq sigs (cdr sigs)))))
+   #+end_src
+
+   [[./_images_emacs-verilog-mode-tips.org/20230702155259.png]] 
+   
 * reference 
 https://veripool.org/verilog-mode/help/#verilog-compiler
 https://veripool.org/verilog-mode/help/

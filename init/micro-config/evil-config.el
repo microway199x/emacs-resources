@@ -61,10 +61,15 @@
 (setq normal-state-background "pale green")
 (add-hook 'evil-normal-state-entry-hook
           (lambda ()
+            
+            (define-key evil-normal-state-map (kbd "TAB") 'org-cycle)
+            (global-set-key (kbd "TAB") 'org-cycle)
             (set-face-attribute 'mode-line nil :background normal-state-background)))
 
 (add-hook 'evil-normal-state-exit-hook
           (lambda ()
+            (define-key evil-normal-state-map (kbd "TAB") 'org-cycle)
+            (global-set-key (kbd "TAB") 'org-cycle)
             (set-face-attribute 'mode-line nil :background original-background)))
 
 
