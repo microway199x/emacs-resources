@@ -92,21 +92,21 @@
   ;;get instant signal width
   (dolist (line-string region-line-list)
     ;;;string match for connect wire: empty float or others
-    (cond ((string-match "\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*,[ ]*\\(.*\\)" line-string)
+    (cond ((string-match "^[ ]*\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*,[ ]*\\(.*\\)$" line-string)
            (progn
              ( if ( < max-inst-len (length (match-string 1 line-string)))
                  (setq max-inst-len (length (match-string 1 line-string))))
              ( if ( < max-con-len (length (match-string 2 line-string)))
                  (setq max-con-len (length (match-string 2 line-string))))
              ))
-          ((string-match "\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*)[ ]*;[ ]*\\(.*\\)" line-string)
+          ((string-match "^[ ]*\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*)[ ]*;[ ]*\\(.*\\)$" line-string)
            (progn
              ( if ( < max-inst-len (length (match-string 1 line-string)))
                  (setq max-inst-len (length (match-string 1 line-string))))
              ( if ( < max-con-len (length (match-string 2 line-string)))
                  (setq max-con-len (length (match-string 2 line-string))))
              ))
-          ((string-match "\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*\\(.*\\)" line-string)
+          ((string-match "^[ ]*\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*\\(.*\\)$" line-string)
            (progn
              ( if ( < max-inst-len (length (match-string 1 line-string)))
                  (setq max-inst-len (length (match-string 1 line-string))))
@@ -124,21 +124,21 @@
                               "s )%-2s %-s"))
   ;;;format output string 
   (dolist (line-string region-line-list new-region-line-list)
-    (cond ((string-match "\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*,[ ]*\\(.*\\)" line-string)
+    (cond ((string-match "^[ ]*\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*,[ ]*\\(.*\\)$" line-string)
            (progn
              (setq new-line-string (format line-output-format
                                            (match-string 1 line-string)
                                            (match-string 2 line-string)
                                            ","
                                            (match-string 3 line-string)))))
-          ((string-match "\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*)[ ]*;[ ]*\\(.*\\)" line-string)
+          ((string-match "^[ ]*\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*)[ ]*;[ ]*\\(.*\\)$" line-string)
            (progn
              (setq new-line-string (format line-output-format
                                            (match-string 1 line-string)
                                            (match-string 2 line-string)
                                            ");"
                                            (match-string 3 line-string)))))
-          ((string-match "\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*\\(.*\\)" line-string)
+          ((string-match "^[ ]*\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*\\(.*\\)$" line-string)
            (progn
              (setq new-line-string (format line-output-format
                                            (match-string 1 line-string)
