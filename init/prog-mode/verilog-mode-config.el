@@ -86,8 +86,8 @@
   (setq region-strings (buffer-substring region-start-p region-end-p))
   (setq region-line-list (split-string region-strings "\n"))
   (setq new-region-line-list '())
-  (setq max-inst-len 10)
-  (setq max-con-len 10)
+  (setq max-inst-len 0)
+  (setq max-con-len 0)
 
   ;;get instant signal width
   (dolist (line-string region-line-list)
@@ -100,6 +100,13 @@
                  (setq max-con-len (length (match-string 2 line-string))))
              ))
           ((string-match "^[ ]*\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*)[ ]*;[ ]*\\(.*\\)$" line-string)
+           (progn
+             ( if ( < max-inst-len (length (match-string 1 line-string)))
+                 (setq max-inst-len (length (match-string 1 line-string))))
+             ( if ( < max-con-len (length (match-string 2 line-string)))
+                 (setq max-con-len (length (match-string 2 line-string))))
+             ))
+          ((string-match "^[ ]*\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*)[ ]*\\(.*\\)$" line-string)
            (progn
              ( if ( < max-inst-len (length (match-string 1 line-string)))
                  (setq max-inst-len (length (match-string 1 line-string))))
@@ -137,6 +144,13 @@
                                            (match-string 1 line-string)
                                            (match-string 2 line-string)
                                            ");"
+                                           (match-string 3 line-string)))))
+          ((string-match "^[ ]*\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*)[ ]*\\(.*\\)$" line-string)
+           (progn
+             (setq new-line-string (format line-output-format
+                                           (match-string 1 line-string)
+                                           (match-string 2 line-string)
+                                           ")"
                                            (match-string 3 line-string)))))
           ((string-match "^[ ]*\\.[ ]*\\([^ ]*\\)[ ]+([ ]*\\([^ ].*[^ ]\\|[^ ]\\|\\)[ ]*)[ ]*\\(.*\\)$" line-string)
            (progn
