@@ -34,9 +34,20 @@
 ;;personal config
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(setq byte-compile-warnings '(not nresolved
+                                  free-vars
+                                  callargs
+                                  redefine
+                                  obsolete
+                                  noruntime
+                                  cl-functions
+                                  interactive-only
+                                  ))
+
 (add-to-list 'load-path micro-config-path)
 (add-to-list 'load-path micro-plugin-path)
 (add-to-list 'load-path micro-prog-mode-path)
+
 
 (add-hook 'emacs-startup-hook 
           (load (concat micro-config-path "common-config")))
