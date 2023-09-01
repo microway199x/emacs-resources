@@ -12,11 +12,14 @@
     (interactive "Dproj root dir: ")
     ;;dir-name: function parameter input at mini-buffer
     (setq v-tags-proj-root dir-name)
+
+    (shell-command
+       (format "rm -rf %s/.PROJ_TAGS"  v-tags-proj-root))
     (shell-command
      ;;(format "%s -f TAGS -e -R %s" path-to-ctags (directory-file-name dir-name)))
-       (format "ctags -f .PROJ_TAGS -e -R %s"  v-tags-proj-root)
-       (setq tags-table-list (cons tags-table-list (concat v-tags-proj-root ".PROJ_TAGS")))
-  ))
+       (format "ctags -f .PROJ_TAGS -e -R %s"  v-tags-proj-root))
+
+       (setq tags-table-list (cons  (concat v-tags-proj-root ".PROJ_TAGS") tags-table-list)))
 
 ;;;etags not support verilog  --> take attention
 (defun v-create-etags (dir-name)
@@ -24,10 +27,11 @@
     and set tags-table-list to tags-table-list """
     (interactive "Dproj root dir: ")
     ;;dir-name: function parameter input at mini-buffer
+    (shell-command
+       (format "rm -rf %s/.PROJ_TAGS"  v-tags-proj-root))
      (eshell-command 
       (format "find %s -type f -name \"*.[svch]\" | etags -f .PROJ_TAGS" dir-name))
-      (setq tags-table-list (cons tags-table-list (concat v-tags-proj-root "/" ".PROJ_TAGS")))
-     )
+      (setq tags-table-list (cons (concat v-tags-proj-root ".PROJ_TAGS") tags-table-list )))
 
 ;;use find-tag find word @ current point, after do creat-etags
 ;;or use find-tag-regexp use regexp search
