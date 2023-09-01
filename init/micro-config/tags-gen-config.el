@@ -15,7 +15,7 @@
     (shell-command
      ;;(format "%s -f TAGS -e -R %s" path-to-ctags (directory-file-name dir-name)))
        (format "ctags -f .PROJ_TAGS -e -R %s"  v-tags-proj-root)
-       (setq tags-table-list (cons tags-table-list (concat v-tags-proj-root "/" ".PROJ_TAGS")))
+       (setq tags-table-list (cons tags-table-list (concat v-tags-proj-root ".PROJ_TAGS")))
   ))
 
 ;;;etags not support verilog  --> take attention
