@@ -1,7 +1,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;create tags use Ctags
+;;create tags use Ctags: use exuberant-ctags or universal-ctags(recommended)
 
 ;; normally system has Ctags, use ctags --help try, not need conffig ctags command path
 ;; (setq path-to-ctags "/opt/local/bin/ctags") ;; config your ctags path here
