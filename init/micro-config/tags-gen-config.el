@@ -1,35 +1,40 @@
 
 
-    (setq v-tags-default-directory "~/editor-tags/emacs/TAGS")
-    (setq v-tags-proj-root (directory-file-name default-directory))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;create tags use Ctags
 
 ;; normally system has Ctags, use ctags --help try, not need conffig ctags command path
 ;; (setq path-to-ctags "/opt/local/bin/ctags") ;; config your ctags path here
+;; (setq v-tags-default-directory "<the proj root>")
   (defun v-create-ctags (dir-name)
-    "Create tags file.use DDirectory selece directory"
-    (interactive "DDirectory: ")
+    """Create tags file use interactive <D> select directory
+    and set tags-table-list to tags-table-list """
+    (interactive "Dproj root dir: ")
+    ;;dir-name: function parameter input at mini-buffer
+    (setq v-tags-proj-root dir-name)
     (shell-command
      ;;(format "%s -f TAGS -e -R %s" path-to-ctags (directory-file-name dir-name)))
-       (format "ctags -f TAGS -e -R %s"  v-tags-proj-root)
-       (setq (cons tags-table-list (concat v-tags-proj-root "/" "TAGS")))
+       (format "ctags -f .PROJ_TAGS -e -R %s"  v-tags-proj-root)
+       (setq tags-table-list (cons tags-table-list (concat v-tags-proj-root "/" ".PROJ_TAGS")))
   ))
-
 
 ;;;etags not support verilog  --> take attention
 (defun v-create-etags (dir-name)
-     "Create tags file."
-     (interactive "DDirectory: ")
+    """Create tags file use interactive <D> select directory
+    and set tags-table-list to tags-table-list """
+    (interactive "Dproj root dir: ")
+    ;;dir-name: function parameter input at mini-buffer
      (eshell-command 
-      (format "find %s -type f -name \"*.[svch]\" | etags -" dir-name)))
+      (format "find %s -type f -name \"*.[svch]\" | etags -f .PROJ_TAGS" dir-name))
+      (setq tags-table-list (cons tags-table-list (concat v-tags-proj-root "/" ".PROJ_TAGS")))
+     )
 
-
-;;use find-tag
+;;use find-tag find word @ current point, after do creat-etags
 ;;or use find-tag-regexp use regexp search
   (defun v-find-tags ()
-    (interactive "find tags at-point ")
-    (find-tags (thing-at-point thing)))
+    (interactive )
+    ;;if tags-table-list is nil, will do visit-tags-table first
+    (find-tag (thing-at-point 'symbol)))
 
 ;;; not generate TAGS automatic ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;  (defadvice v-find-tag (around refresh-etags activate)

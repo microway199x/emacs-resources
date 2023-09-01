@@ -39,7 +39,8 @@
 )
 
 ;;; only when bsv-mode buffer execute
-(add-hook 'bsv-mode-hook 'v-bsv-outline-hook)
+;;(add-hook 'bsv-mode-hook 'v-bsv-outline-hook)
+(v-bsv-outline-hook)
 
 (require 'bsv-mode)
 (provide 'bsv-mode-config)
