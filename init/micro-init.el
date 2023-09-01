@@ -79,6 +79,9 @@
 (add-hook 'emacs-startup-hook 
                  (load (concat micro-config-path "yasnippet-config")))
 
+(add-hook 'emacs-startup-hook 
+                 (load (concat micro-config-path "tags-gen-config")))
+
 ;;show put before bbyac-config, for bbyac.el require browse-kill-ring
 (add-hook 'emacs-startup-hook 
                  (load (concat micro-config-path "browse-kill-ring-config")))
