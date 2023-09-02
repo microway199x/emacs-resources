@@ -59,6 +59,9 @@
           (load (concat micro-config-path "evil-config")))
 
 (add-hook 'emacs-startup-hook 
+          (load (concat micro-config-path "general-config")))
+
+(add-hook 'emacs-startup-hook 
           (load (concat micro-config-path "ivy-config")))
 
 (add-hook 'emacs-startup-hook 
