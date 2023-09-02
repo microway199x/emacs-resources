@@ -3,8 +3,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;create tags use Ctags: use exuberant-ctags or universal-ctags(recommended)
 
-;; normally system has Ctags, use ctags --help try, not need conffig ctags command path
-;; (setq path-to-ctags "/opt/local/bin/ctags") ;; config your ctags path here
 ;; (setq v-tags-default-directory "<the proj root>")
   (defun v-create-ctags (dir-name)
     """Create tags file use interactive <D> select directory
@@ -16,6 +14,8 @@
     (shell-command
        (format "rm -rf %s/.PROJ_TAGS"  v-tags-proj-root))
     (shell-command
+      ;; normally system has Ctags, use ctags --help try, not need conffig ctags command path
+      ;; (setq path-to-ctags "/opt/local/bin/ctags") ;; config which ctags-program-used-path here
      ;;(format "%s -f TAGS -e -R %s" path-to-ctags (directory-file-name dir-name)))
        (format "ctags -f .PROJ_TAGS -e -R %s"  v-tags-proj-root))
 
