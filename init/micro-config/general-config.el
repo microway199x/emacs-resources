@@ -34,13 +34,13 @@
 ;; bind in motion state (inherited by the normal, visual, and operator states)
 (general-mmap
   ";" 'evil-ex
-  ":" 'evil-repeat-find-char)
+  ":" 'evil-ex )
 
 ;; alternatively, for shorter names
 (general-evil-setup t)
 (mmap
   ";" 'evil-ex
-  ":" 'evil-repeat-find-char)
+  ":" 'evil-ex)
 
 ;; * Mode Keybindings
 (general-nmap
