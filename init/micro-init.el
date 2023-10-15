@@ -15,7 +15,7 @@
         (setq micro-snippets-path (concat micro-config-root-path "snippets/"))
         (setq micro-plugin-path (concat micro-config-root-path "plugin/"))
         (setq micro-config-path (concat micro-config-root-path "micro-config/"))
-        (setq micro-config-path (concat micro-config-root-path "micro-config/prog-mode-config/"))
+        (setq micro-prog-mode-config-path (concat micro-config-root-path "micro-config/prog-mode-config/"))
         (setq micro-run-path (concat micro-config-root-path "run-command/"))
         (setq micro-theme-path (concat micro-config-root-path "themes/"))
         (setq micro-prog-mode-path (concat micro-config-root-path "prog-mode/")))
