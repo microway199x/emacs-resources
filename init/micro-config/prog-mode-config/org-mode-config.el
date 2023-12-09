@@ -128,4 +128,4 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;org setting end here
-(provide 'org-config)
+(provide 'org-mode-config)

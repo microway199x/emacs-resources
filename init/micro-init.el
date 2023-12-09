@@ -7,6 +7,7 @@
        (setq micro-snippets-path (concat micro-config-root-path "snippets\\"))
        (setq micro-plugin-path (concat micro-config-root-path "plugin\\"))
        (setq micro-config-path (concat micro-config-root-path "micro-config\\"))
+       (setq micro-prog-mode-config-path (concat micro-config-root-path "micro-config\\prog-mode-config\\"))
        (setq micro-run-path (concat micro-config-root-path "run-command\\"))
        (setq micro-theme-path (concat micro-config-root-path "themes\\"))
        (setq micro-prog-mode-path (concat micro-config-root-path "prog-mode\\")))
@@ -14,6 +15,7 @@
         (setq micro-snippets-path (concat micro-config-root-path "snippets/"))
         (setq micro-plugin-path (concat micro-config-root-path "plugin/"))
         (setq micro-config-path (concat micro-config-root-path "micro-config/"))
+        (setq micro-config-path (concat micro-config-root-path "micro-config/prog-mode-config/"))
         (setq micro-run-path (concat micro-config-root-path "run-command/"))
         (setq micro-theme-path (concat micro-config-root-path "themes/"))
         (setq micro-prog-mode-path (concat micro-config-root-path "prog-mode/")))
@@ -73,8 +75,6 @@
 (add-hook 'emacs-startup-hook 
           (load (concat micro-config-path "which-key-config")))
 
-(add-hook 'emacs-startup-hook 
-          (load (concat micro-prog-mode-path "org-capture-config")))
 
 (add-hook 'emacs-startup-hook 
                  (load (concat micro-config-path "company-mode-config")))
@@ -86,25 +86,31 @@
                  (load (concat micro-config-path "tags-gen-config")))
 
 ;;show put before bbyac-config, for bbyac.el require browse-kill-ring
-(add-hook 'emacs-startup-hook 
-                 (load (concat micro-config-path "browse-kill-ring-config")))
+;;(add-hook 'emacs-startup-hook 
+;;                 (load (concat micro-config-path "browse-kill-ring-config")))
 ;;(add-hook 'emacs-startup-hook 
 ;;                 (load (concat micro-config-path "bbyac-config")))
 
-;;* 2. program mode config   ;;;;;;;;;;;;;;;;;;;;;;;
-;;(eval-after-load 'c-mode 
-;;                 '(load (concat micro-config-path "auto-complete-config")))
-;;(eval-after-load 'verilog-mode 
-;;                 '(load (concat micro-config-path "auto-complete-config")))
-;;(eval-after-load 'c-mode 
-;;                 '(load (concat micro-config-path "yasnippet-config")))
-(eval-after-load 'verilog-mode 
-                  (load (concat micro-prog-mode-path "verilog-mode-config")))
+(eval-after-load 'help-mode
+          (load (concat micro-config-path "elisp-demos-config")))
 
+;;* 2. program mode config   ;;;;;;;;;;;;;;;;;;;;;;;
+
+(add-hook 'emacs-startup-hook 
+                 (load (concat micro-config-path "fly-make-config")))
+
+;; 2.1. verilog-mode
+(eval-after-load 'verilog-mode 
+                  (load (concat micro-prog-mode-config-path "verilog-mode-config")))
+
+;; 2.2. org-mode
 (add-to-list 'auto-mode-alist '("\\.txt\\'" . org-mode))
 
+(add-hook 'emacs-startup-hook 
+          (load (concat micro-prog-mode-config-path "org-mode-capture-config")))
+
 (eval-after-load 'org-mode
-           (load (concat micro-prog-mode-path "org-config")))
+           (load (concat micro-prog-mode-config-path "org-mode-config")))
 
 (eval-after-load 'org-mode
           (load (concat micro-config-path "deft-config")))
@@ -117,11 +123,10 @@
 
 (add-to-list 'auto-mode-alist '("\\.bsv\\'" . bsv-mode))
 
+;; 2.3. bsv-mode
 (eval-after-load 'bsv-mode 
-            (load (concat micro-prog-mode-path "bsv-mode-config")))
+            (load (concat micro-prog-mode-config-path "bsv-mode-config")))
 
-(eval-after-load 'help-mode
-          (load (concat micro-config-path "elisp-demos-config")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;auto run command ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
