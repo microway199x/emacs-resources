@@ -6,6 +6,12 @@
 (defvar verilog--flymake-proc nil
   "A flymake verilog process.")
 
+;;for make_process constraint, each part shall has no space in string ??
+;; (setq verilog-flymake-lib-option "-y" "xxx/dir/" "-f" "xxx/filelist.lst")
+(defcustom verilog-flymake-specify-option '()
+  "verilog library used for verilog's flymake.
+  -f lib_filelist.f -y lib_directory")
+
 (defvar verilog-flymake-command '("verilator" "--lint-only" "-Wall")
   "Command for verilog's flymake.")
 
@@ -21,9 +27,9 @@
         (with-current-buffer output-buffer
           (goto-char (point-min))
           (let ((diags))
-            (while (search-forward-regexp
-                    "^\\(%.*\\): .*:\\([0-9]+\\):\\([0-9]+\\): \\(.*\\)$"
-                    nil t)
+            (while (search-forward-regexp  
+                     ;; "^\\(%.*\\):.*:\\([0-9]+\\):\\([0-9]+\\): \\(.*\\)$" nil t)
+                      (concat "^\\(%.*\\):.*" (file-name-base (buffer-file-name source-buffer)) ".*:\\([0-9]+\\):\\([0-9]+\\): \\(.*\\)$") nil t) 
               (let* ((msg (match-string 4))
                      (level-msg (match-string 1))
                      (line (string-to-number (match-string 2)))
@@ -83,8 +89,8 @@ current buffer state and calls REPORT-FN when done."
               (make-process
                :name "verilog-flymake-process"
                :buffer output-buffer
-               :command (append verilog-flymake-command
-                                (list (buffer-file-name source-buffer)))
+               :command (append verilog-flymake-command verilog-flymake-specify-option
+                                (list (buffer-file-name source-buffer)) nil)
                :connection-type 'pipe
                :sentinel
                (lambda (proc _event)

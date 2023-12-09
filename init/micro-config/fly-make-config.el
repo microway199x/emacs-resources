@@ -42,12 +42,13 @@ Key bindings:
 
 
 ;;;2.0 Flymake program-mode setting
-
+(require 'flymake-verilog-verilator)
 (add-hook 'verilog-mode-hook 'flymake-mode)
 (add-hook 'verilog-mode-hook 'micro-flymake-minor-mode)
-
-(require 'flymake-verilog-verilator)
-
+(setq verilog-flymake-specify-option '(
+                                   "-y" "/home/micro/git/tinyriscv/rtl/utils/"
+                                    ))
 
 ;;;0.0 ending
 (provide 'fly-make-config)
+
