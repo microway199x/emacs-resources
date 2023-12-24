@@ -16,6 +16,8 @@
 ;;; windows use tool:snipaster
 ;;; linux   use tool:flameshot
 (defvar v-snip-exe-path "C:\\tools\\Snipaste\\Snipaste.exe")
+;;if path-name has space
+;;(defvar v-snip-exe-path "C:/\"Program Files\"/Snipaste/Snipaste.exe")
 ;;(defvar v-snip-quick-save "D:\\software\\snipaste\\quick-save\\snip-quick-save.png")
 (defun v-org-snip-insert ()
   "Take a screenshot into a unique-named file in the current buffer file
@@ -51,9 +53,12 @@
              (make-directory capture-save-path))
           (if (eq system-type `windows-nt)
             (progn ;;; if windows 
-                 (shell-command (concat v-snip-exe-path " snip -o \"" v-org-file-path "\""))) ;;
+                 ;;(shell-command (concat v-snip-exe-path " snip -o \"" v-org-file-path "\""))) ;;
+                 ;; if use async-shell-command, emacs will not be hang
+                 (async-shell-command (concat v-snip-exe-path " snip -o \"" v-org-file-path "\""))) ;;
             (progn ;;; if linux
-                 (shell-command (concat  "flameshot gui -p " v-org-file-path )))) ;;
+                 ;;(shell-command (concat  "flameshot gui -p " v-org-file-path )))) ;;
+                 (async-shell-command (concat  "flameshot gui -p " v-org-file-path )))) ;;
 
        ;;(insert "#+CAPTATION: <typing in>  \n")
        ;;(insert "#+LABEL:  \n")

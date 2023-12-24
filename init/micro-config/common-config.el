@@ -67,10 +67,17 @@
  (defun micro-set-font()
    (if (eq system-type `windows-nt)
        (progn
-	;;(set-frame-font "Consolas-12")
-	 (set-frame-font "Consolas-14")
-         (set-fontset-font "fontset-default"  
-                  'gb18030' ("¿¬Ìå" . "unicode-bmp")))
+	      ;;(set-frame-font "Consolas-12")
+	       (set-frame-font "Consolas-14")
+           ;;all thoes setting is OK
+           ;;(set-fontset-font "fontset-default"  
+           ;;                  'gb18030 '("KaiTi" . "unicode-bmp"))
+           ;;(set-fontset-font "fontset-default"  
+           ;;                  'gb18030  (font-spec :family "KaiTi"
+           ;;                                       :registry "unicode-bmp"))
+           (set-fontset-font "fontset-default"  
+                             'gb18030 "KaiTi" )
+      );; end progn
      ;;(set-frame-font "UbuntuMonoRegular-12")))
      ;;(set-frame-font "Ubuntu Mono-14")))
      ))
