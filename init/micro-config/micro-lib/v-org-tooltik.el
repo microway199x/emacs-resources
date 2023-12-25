@@ -192,7 +192,7 @@
      (beginning-of-line)
      (insert vv-roam-ref-link)
      ;; insert back link @ the end of file name 
-     (if (equal "y" (read-char "need insert back link? if yes, type \"y\":"))
+     (if (equal "y" (read-string "need insert back link? if yes, type \"y\":"))
 	 (progn
              (find-file vv-roam-link-file-name)
              (goto-char (point-max))
@@ -225,7 +225,7 @@
      ;(forward-line)
      (insert vv-roam-ref-link)
      ;; insert back link @ the end of file name 
-     (if (equal "y" (read-char "need insert back link?:"))
+     (if (equal "y" (read-string "need insert back link?:"))
 	 (progn
             (find-file vv-roam-link-file-name)
             (goto-char (point-max))
