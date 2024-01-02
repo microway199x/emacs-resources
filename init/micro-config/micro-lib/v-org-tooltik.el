@@ -53,12 +53,12 @@
              (make-directory capture-save-path))
           (if (eq system-type `windows-nt)
             (progn ;;; if windows 
-                 ;;(shell-command (concat v-snip-exe-path " snip -o \"" v-org-file-path "\""))) ;;
+                 (shell-command (concat v-snip-exe-path " snip -o \"" v-org-file-path "\""))) ;;
                  ;; if use async-shell-command, emacs will not be hang
-                 (async-shell-command (concat v-snip-exe-path " snip -o \"" v-org-file-path "\""))) ;;
+                 ;;(async-shell-command (concat v-snip-exe-path " snip -o \"" v-org-file-path "\""))) ;;
             (progn ;;; if linux
-                 ;;(shell-command (concat  "flameshot gui -p " v-org-file-path )))) ;;
-                 (async-shell-command (concat  "flameshot gui -p " v-org-file-path )))) ;;
+                 (shell-command (concat  "flameshot gui -p " v-org-file-path )))) ;;
+                 ;;(async-shell-command (concat  "flameshot gui -p " v-org-file-path )))) ;;
 
        ;;(insert "#+CAPTATION: <typing in>  \n")
        ;;(insert "#+LABEL:  \n")
