@@ -1,7 +1,8 @@
-# key: dot
+# -*- mode: snippet -*-
 # name:dot-t
 # key:dot-t
 # --
 #+BEGIN_SRC dot :file ${1:picture name}.png :cmdline -Kdot -Tpng
+    node [fontname="FangSong"] //防止中文乱码，保存为UTF8格式
     $0
 #+END_SRC
