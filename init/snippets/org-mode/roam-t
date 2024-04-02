@@ -1,0 +1,23 @@
+# -*- mode: snippet -*-
+# name: roam notes template
+# key: roam-t
+# --
+
+#+OPTIONS: ^:nil
+#+OPTIONS: ^:{}
+#+TITLE: `(file-name-nondirectory buffer-file-name)`
+
+* Date:: `(format-time-string "%Y-%m-%d::%H" (current-time))`
+
+* 记录原因/背景:: 
+
+* 记录来源/想法来源:: 
+
+* 记录详情:: 
+
+* reference:: 
+
+
+
+
+
