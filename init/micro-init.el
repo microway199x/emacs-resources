@@ -102,7 +102,10 @@
 ;; 2.1. verilog-mode
 (eval-after-load 'verilog-mode 
                   (load (concat micro-prog-mode-config-path "verilog-mode-config")))
-
+;;;comment can not work for windows
+;;;(eval-after-load 'verilog-mode 
+;;;                  (load (concat micro-prog-mode-config-path "verilog-ext-config")))
+;;;
 ;; 2.2. org-mode
 (add-to-list 'auto-mode-alist '("\\.txt\\'" . org-mode))
 
