@@ -253,6 +253,8 @@
       (newline)
       (insert "    layout=neato;")
       (newline)
+      (insert "    node [fontname=[FangSong]; //设置中文字体防止中文乱码")
+      (newline)
       (insert "    //roam-connect-start")
       (newline)
       (insert "}")
