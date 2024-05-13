@@ -15,6 +15,7 @@
       ))
 (micro-bsv-dir-set)
 
+(require 'bsv-mode)
 ;;* 2. outline mode header config
 (defun v-bsv-outline-hook ()
   ; outline uses this regexp to find headers. 
@@ -34,14 +35,11 @@
   ;(hide-body)
   ; make paren matches visible
   (show-paren-mode 1)
-  (define-key evil-normal-state-map (kbd "TAB") 'outline-toggle-children)
-  (define-key evil-normal-state-map (kbd "<backtab>") 'outline-show-subtree) ;;shift + tab
 )
 
 ;;; only when bsv-mode buffer execute
-;;(add-hook 'bsv-mode-hook 'v-bsv-outline-hook)
-(v-bsv-outline-hook)
+(add-hook 'bsv-mode-hook 'v-bsv-outline-hook)
+(v-bsv-outline-hook) ;;??? 为什么add-hook不生效
 
-(require 'bsv-mode)
 (provide 'bsv-mode-config)
 

@@ -67,7 +67,16 @@
           (define-key evil-normal-state-map (kbd "<backtab>") 'outline-toggle-children)
           )) 
 
-;;所有mode中都生效
+(add-hook 'bsv-mode-hook 
+    (lambda () 
+          (global-unset-key (kbd "<backtab>")) ;;unset掉，防止冲突
+          ;;outline-mode在evil配置后加载，所以用verilog-mode hook重新绑定
+          ;;原按键“TAB"给org-mode使用，防止冲突
+          (define-key evil-normal-state-map (kbd "<backtab>") 'outline-toggle-children)
+          )) 
+
+
+;;所有mode中都生效,所有prog-mode中建议使用，不建议使用<backtab>
 (define-key evil-normal-state-map (kbd "z f") 'outline-hide-subtree)
 (define-key evil-normal-state-map (kbd "z o") 'outline-show-subtree)
 ;;}}}
