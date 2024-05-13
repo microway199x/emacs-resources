@@ -23,14 +23,14 @@
 ;;* {{ 2. outline mode header config
 
 (defun v-verilog-outline-hook ()
-  ; outline uses this regexp to find headers. 
-  ; use indent or noindent "///{, ///{{{, always,function,module"
+  " outline uses this regexp to find headers.  
+    use indent or noindent  ///{, ///{{{, always,function,module  "
+
   ;(setq outline-regexp "///[{\f]+\\|[ \t]*\\(always\\|module\\|function\\|begin\\)") ;; use ///{ manually fold
   (setq outline-regexp "[ \t]*///[{\f]+") ;; use ///{ manually fold
   ;(setq outline-heading-end-regexp "///[}\f]+") ;; not used
   ;(setq outline-heading-alist `(("chapter". 2) ("section". 2) )) ;; not used
-  ;use default fold level, default fold level is column number
-  ; enable our level computation
+  ;use default fold level, default fold level is column number ,enable our level computation
   ;(setq outline-level 'py-outline-level)
   ; do not use their \C-c@ prefix, too hard to type. Note this overides some bindings.
   (setq outline-minor-mode-prefix "\C-t")
@@ -40,8 +40,6 @@
   ;(hide-body)
   ; make paren matches visible
   (show-paren-mode 1)
-  (define-key evil-normal-state-map (kbd "TAB") 'outline-toggle-children)
-  (define-key evil-normal-state-map (kbd "<backtab>") 'outline-show-subtree) ;;shift + tab
 )
 ;;; only when verolog-mode buffer execute
 (add-hook 'verilog-mode-hook 'v-verilog-outline-hook)

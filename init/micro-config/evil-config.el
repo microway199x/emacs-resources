@@ -43,16 +43,36 @@
 ;; remove all keybindings from insert-state keymap, use emacs-state when editing
 ;; (setcdr evil-insert-state-map nil)
 
-;;{{ Emacs 28.1 后 EVIL，org-mode无法折叠问题
+;;{{ Emacs 设置evil-normal-state map for modes ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;{{{ org-mode
 (setq evil-want-C-i-jump nil)
-(global-unset-key (kbd "TAB"))
 (defun v-org-specify-config()
+    (global-unset-key (kbd "TAB"))
     (setq org-adapt-indentation t)
     (define-key evil-normal-state-map (kbd "TAB") 'org-cycle))
 
 (add-hook 'org-mode-hook 'v-org-specify-config)
-(define-key evil-normal-state-map (kbd "TAB") 'org-cycle)
-(global-set-key (kbd "TAB") 'org-cycle)
+;;;}}} org-mode
+
+;;;{{{ outline-mode for other-mode, eg:verilog-mode,c-mode,...
+;;; not used "TAB", 因为evil-normal-state-map只能将tab绑定到一个函数上，
+;;;当打开多个文件时，即使使用xxx-mode-hook,切换major-mode时，无法切换按键
+;;; xxx-mode-hook只在第一次打开对应文件时生效，所以按键按照最后一个xxx-mode-hook绑定，容易混淆
+;;; 所以，尽量不要在同一个emacs中打开多个major-mode的文件，防止冲突
+(add-hook 'verilog-mode-hook 
+    (lambda () 
+          (global-unset-key (kbd "<backtab>")) ;;unset掉，防止冲突
+          ;;outline-mode在evil配置后加载，所以用verilog-mode hook重新绑定
+          ;;原案件“TAB"给org-mode使用，
+          (define-key evil-normal-state-map (kbd "<backtab>") 'outline-toggle-children)
+          )) 
+
+;;所有mode中都生效
+(define-key evil-normal-state-map (kbd "z f") 'outline-hide-subtree)
+(define-key evil-normal-state-map (kbd "z o") 'outline-show-subtree)
+;;}}}
+
+
 ;;}}
 
 (setq original-background (face-attribute 'mode-line :background))
@@ -62,14 +82,10 @@
 (add-hook 'evil-normal-state-entry-hook
           (lambda ()
             
-            (define-key evil-normal-state-map (kbd "TAB") 'org-cycle)
-            (global-set-key (kbd "TAB") 'org-cycle)
             (set-face-attribute 'mode-line nil :background normal-state-background)))
 
 (add-hook 'evil-normal-state-exit-hook
           (lambda ()
-            (define-key evil-normal-state-map (kbd "TAB") 'org-cycle)
-            (global-set-key (kbd "TAB") 'org-cycle)
             (set-face-attribute 'mode-line nil :background original-background)))
 
 
