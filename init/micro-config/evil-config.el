@@ -63,7 +63,7 @@
     (lambda () 
           (global-unset-key (kbd "<backtab>")) ;;unset掉，防止冲突
           ;;outline-mode在evil配置后加载，所以用verilog-mode hook重新绑定
-          ;;原案件“TAB"给org-mode使用，
+          ;;原按键“TAB"给org-mode使用，防止冲突
           (define-key evil-normal-state-map (kbd "<backtab>") 'outline-toggle-children)
           )) 
 
