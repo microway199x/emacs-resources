@@ -124,9 +124,26 @@
 ;;(add-hook 'org-mode-hook 
 ;;          (load (concat micro-config-path "deft-config")))
 
-(add-to-list 'auto-mode-alist '("\\.bsv\\'" . bsv-mode))
+
 
 ;; 2.3. bsv-mode
+
+(defun micro-bsv-dir-set()
+  (if (eq system-type `windows-nt)
+      (progn
+          (add-to-list 'load-path (concat micro-prog-mode-path "bsv-mode\\"))
+          (add-to-list 'load-path (concat micro-prog-mode-path "bsv-mode\\bsv-mode\\")))
+      (progn
+          (add-to-list 'load-path (concat micro-prog-mode-path "bsv-mode/"))
+          (add-to-list 'load-path (concat micro-prog-mode-path "bsv-mode/bsv-mode/")))
+      ))
+
+(micro-bsv-dir-set)
+
+(autoload 'bsv-mode "bsv-mode" "BSV mode" t)
+(add-to-list 'auto-mode-alist '("\\.bsv\\'" . bsv-mode))
+;(setq auto-mode-alist (cons  '("\\.bsv\\'" . bsv-mode) auto-mode-alist))
+
 (eval-after-load 'bsv-mode 
             (load (concat micro-prog-mode-config-path "bsv-mode-config")))
 

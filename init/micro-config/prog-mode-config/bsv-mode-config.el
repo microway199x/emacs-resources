@@ -4,20 +4,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;install Bsv-mode
-(defun micro-bsv-dir-set()
-  (if (eq system-type `windows-nt)
-      (progn
-          (add-to-list 'load-path (concat micro-prog-mode-path "bsv-mode\\"))
-          (add-to-list 'load-path (concat micro-prog-mode-path "bsv-mode\\bsv-mode\\")))
-      (progn
-          (add-to-list 'load-path (concat micro-prog-mode-path "bsv-mode/"))
-          (add-to-list 'load-path (concat micro-prog-mode-path "bsv-mode/bsv-mode/")))
-      ))
-(micro-bsv-dir-set)
 
 (require 'bsv-mode)
 ;;* 2. outline mode header config
 (defun v-bsv-outline-hook ()
+  (interactive)
   ; outline uses this regexp to find headers. 
   ; use indent or noindent "///{, ///{{{, "
   ;(setq outline-regexp "[ \t]*///[{\f]+\\|[ \t]*\\(rule\\|function\\|module\\|method\\|interface\\)") //use manually ///{ 
@@ -39,7 +30,6 @@
 
 ;;; only when bsv-mode buffer execute
 (add-hook 'bsv-mode-hook 'v-bsv-outline-hook)
-(v-bsv-outline-hook) ;;??? 为什么add-hook不生效
 
 (provide 'bsv-mode-config)
 
