@@ -3677,12 +3677,9 @@ Key bindings specific to `bsv-mode-map' are:
   (set (make-local-variable 'imenu-generic-expression)
        bsv-imenu-generic-expression)
   ;; Tell which-func-modes that imenu knows about bsv
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;micro changed, reference: which-func-modes default is t not at list
-  ;;if not t, it is a list,
-  (when (not (boundp 'which-func-modes))
-       (add-to-list 'which-func-modes 'bsv-mode))
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  (when (boundp 'which-func-modes) 
+        (when (eq (type-of which-func-modes) 'cons)
+             (add-to-list 'which-func-modes 'bsv-mode)))
   ;; hideshow support
   (when (boundp 'hs-special-modes-alist)
     (unless (assq 'bsv-mode hs-special-modes-alist)
