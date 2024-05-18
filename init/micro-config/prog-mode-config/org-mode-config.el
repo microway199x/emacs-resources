@@ -88,7 +88,7 @@
         (">" . "skyblue")
         ("=" . "red")
         ("#" . "green")
-	    ("TODO" . "red")
+	("TODO" . "red")
         ("IMDO" . "red")
         ("ONGO" . "skyblue")
         ("DONE" . "green")
@@ -124,6 +124,8 @@
           (lambda () (setq-default fill-column 80)))
 (auto-fill-mode t)
 (setq org-startup-indented t)
+;;TODO, (add-hook 'org-mode-hook (org-num-mode t)) can not use as init config
+
 (require 'ox-freemind)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

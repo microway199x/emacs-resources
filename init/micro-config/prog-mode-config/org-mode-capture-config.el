@@ -12,8 +12,8 @@
 (defun v-open-todo-list()
   """open todo file and agenda mode"""
   (interactive)
-  (find-file (concat micro-org-capture-path "todo.org"))
   (find-file (concat micro-org-capture-path "todo_capture.org"))
+  (find-file (concat micro-org-capture-path "todo.org"))
   (org-mode)
   (setq org-agenda-start-with-log-mode t)
   (setq org-agenda-files (list (concat micro-org-capture-path "todo.org")
