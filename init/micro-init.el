@@ -96,7 +96,7 @@
 
 ;;* 2. program mode config   ;;;;;;;;;;;;;;;;;;;;;;;
 
-(add-hook 'emacs-startup-hook 
+(add-hook 'verilog-mode 
                  (load (concat micro-config-path "fly-make-config")))
 
 ;; 2.1. verilog-mode

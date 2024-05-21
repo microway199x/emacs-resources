@@ -17,7 +17,7 @@
 (global-hl-line-mode 1)
 ;;设置可能被主题覆盖，不起作用
 (set-face-background 'highlight "#222")
-(set-face-foreground 'highlight nil)
+(set-face-foreground 'highlight 'unspecified)
 (set-face-underline 'highlight t)
 
 (setq echo-keystrokes 0.1)   ;;;尽快显示按键序列
@@ -113,6 +113,7 @@
          (concat micro-config-path "micro-lib"))))
 (micro-common-tooltik-dir-set)
 (require 'v-common-tooltik)
+(auto-space-mode t)
 
 (provide 'common-config)
 
