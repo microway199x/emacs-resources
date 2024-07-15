@@ -28,7 +28,8 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;转义设置
+;;;{{ 1. org-mode export format setting
+;;;1.0  转义设置
 (setq org-export-with-sub-superscripts '{}) ;;这样就会用 {} 来转义了。
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -43,8 +44,7 @@
 
 ;;(require 'htmlize)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;org-mode 输出表格的时候显示全部框线
+;;;1.1 org-mode 输出表格的时候显示全部框线
 (setq org-html-table-default-attributes
       '(:border "2"
         :cellspacing "0"
@@ -52,8 +52,37 @@
         :rules "all"
         :frame "border"))
 
+
+;;;;1.2 使用pandoc ORG-MODE 转 WROD，
+(defun v-org-export-docx ()
+  (interactive)
+  (let ((docx-file (concat (file-name-sans-extension (buffer-file-name)) ".docx"))
+       ;;use default template   (template-file "/path/template.docx"))
+	)
+    ;;(shell-command (format "pandoc %s -o %s --reference-doc=%s" (buffer-file-name) docx-file template-file))
+      (shell-command (format "pandoc %s -o %s " (buffer-file-name) docx-file ))
+    (message "Convert finish: %s" docx-file)))
+
+;;;1.3 org-export to freemind
+;;; copy ox-freemind.el , can not compile to .elc
+(require 'ox-freemind)
+;;;add freemind as export backends
+(setq org-export-backends '(freemind odt latex icalendar html ascii))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; org babel 语言支持设置
+;;;1.4 org indent 设置
+(add-hook 'org-mode-hook
+          (lambda () (setq-default fill-column 80)))
+(auto-fill-mode t)
+(setq org-startup-indented t)
+;;TODO, (add-hook 'org-mode-hook (org-num-mode t)) can not use as init config
+
+;;;}} 1. org-mode export format setting
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;{{ 2.0 org babel 支持设置
 ;;执行emacs org-mode中的代码C-c C-c
 (org-babel-do-load-languages 'org-babel-load-languages
      '(;;can also add other langue here
@@ -63,11 +92,15 @@
            (dot . t)  ;;graphiz 画图 add xxx/griphviz/bin to 环境PATH
            (org . t)
            (latex . t)))
+
 (setq org-plantuml-jar-path
       (expand-file-name "C:\\tools\\plantuml.jar"))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;}} 2.0 org babel 支持设置
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;TODO 关键字sequence
+;;;{{ 3.0 ORG-GTD
+;;;3.1 TODO 关键字sequence
 ;;如果要添加，就在sequence中添加，或者添加sequence
 ;;如果添加感叹号!，则会自动添加时间戳，@/意思是不循环切换 ,
 ;;;如果没有"|"则最后一项表示完成,如果有"|"，则"|"后面的项表示完成
@@ -80,8 +113,7 @@
 ;;   '((type "工作---(w!)" "学习---(s!)" "休闲---(l!)" "|")
 ;;     (sequence "TODO===(t!)" "IMDO===" "ONGO>>>(o!)" "|" "DONE---(d!)" "ABORT--(a!)")))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;TODO 关键字face
+;;;3.2 TODO 关键字face
 (setq org-todo-keyword-faces 
       '(
         ("?" . "red")
@@ -94,9 +126,11 @@
         ("DONE" . "green")
         ("ABORT" . "gray")))
 
+;;;}} 3.0 ORG-GTD
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;设置常用公共函数
+;;;{{4.0 mics& funcs setting 设置常用公共函数
 (defun micro-org-tooltik-dir-set()
   (if (eq system-type `windows-nt)
       (add-to-list 'load-path 
@@ -106,27 +140,9 @@
 (micro-org-tooltik-dir-set)
 (require 'v-org-tooltik)
 
+;;;}}4.0 mics& funcs setting 设置常用公共函数
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;使用pandoc ORG-MODE 转 WROD，
-(defun v-org-export-docx ()
-  (interactive)
-  (let ((docx-file (concat (file-name-sans-extension (buffer-file-name)) ".docx"))
-       ;;use default template   (template-file "/path/template.docx"))
-	)
-    ;;(shell-command (format "pandoc %s -o %s --reference-doc=%s" (buffer-file-name) docx-file template-file))
-      (shell-command (format "pandoc %s -o %s " (buffer-file-name) docx-file ))
-    (message "Convert finish: %s" docx-file)))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; org MISC设置
-(add-hook 'org-mode-hook
-          (lambda () (setq-default fill-column 80)))
-(auto-fill-mode t)
-(setq org-startup-indented t)
-;;TODO, (add-hook 'org-mode-hook (org-num-mode t)) can not use as init config
-
-(require 'ox-freemind)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;org setting end here

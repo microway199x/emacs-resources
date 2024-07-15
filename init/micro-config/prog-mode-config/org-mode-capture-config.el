@@ -41,4 +41,6 @@
           "* %t %?\n %U\n %i\n")))
         ;;"* %t %?\n %U\n %i\n %a"))) ;;use input manually
 
+
+
 (provide 'org-capture-config)
