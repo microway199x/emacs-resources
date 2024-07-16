@@ -218,8 +218,8 @@
           (vv-roam-ref-relative-path  (file-relative-name vv-roam-link-file-name (file-name-directory vv-roam-cur-file-name )))
           (vv-roam-back-relative-path (file-relative-name vv-roam-cur-file-name (file-name-directory vv-roam-link-file-name )))
 
-          (vv-roam-ref-link (format"roam ref note: [[file:%s]]" vv-roam-ref-relative-path))
-          (vv-roam-back-link (format"roam back note: [[file:%s]]"  vv-roam-back-relative-path)))
+          (vv-roam-ref-link (format"** roam ref note: [[file:%s]]" vv-roam-ref-relative-path))
+          (vv-roam-back-link (format"** roam back note: [[file:%s]]"  vv-roam-back-relative-path)))
 	  
      ;; insert reference link @ the end of file name 
      (goto-char (point-max))
