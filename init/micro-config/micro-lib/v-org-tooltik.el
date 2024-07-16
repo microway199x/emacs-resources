@@ -208,15 +208,18 @@
 
 (defun v-roam-insert-otherdir()
   (interactive)
-  (let* ((vv-roam-cur-file-name  (file-name-nondirectory buffer-file-name))
+  (let* ((vv-roam-cur-file-name  (expand-file-name buffer-file-name))
           ;;(vv-roam-link-file-name (read-file-name "input the reference note name:"))
 	  ;; mannual input relative path, for use @different device
           ;;(vv-roam-link-file-name (read-string "input the reference note name:"))
           (vv-roam-link-file-name (if (equal "y" (read-string "reference exists file?, if yes,type y:"))
-		 		  (file-name-nondirectory (read-file-name "select the reference note name:"))
+		 		  (expand-file-name (read-file-name "select the reference note name:"))
                                   (read-string "input the reference note name, if no,type N:")))
-          (vv-roam-ref-link (format"roam ref note: [[file:%s]]" vv-roam-link-file-name))
-          (vv-roam-back-link (format"roam back note: [[file:%s]]" vv-roam-cur-file-name)))
+          (vv-roam-ref-relative-path  (file-relative-name vv-roam-link-file-name vv-roam-cur-file-name ))
+          (vv-roam-back-relative-path (file-relative-name vv-roam-cur-file-name vv-roam-link-file-name ))
+
+          (vv-roam-ref-link (format"roam ref note: [[file:%s]]" vv-roam-ref-relative-path))
+          (vv-roam-back-link (format"roam back note: [[file:%s]]"  vv-roam-back-relative-path)))
 	  
      ;; insert reference link @ the end of file name 
      (goto-char (point-max))
@@ -233,8 +236,11 @@
             (forward-line)
             (insert vv-roam-back-link)))
      ;; refresh roam overview file 
-     (v-roam-overview-refresh nil vv-roam-cur-file-name vv-roam-link-file-name)
-     (switch-to-buffer vv-roam-cur-file-name)
+     (switch-to-buffer (file-name-nondirectory vv-roam-cur-file-name))
+     (v-roam-overview-refresh nil (file-name-base vv-roam-cur-file-name) vv-roam-ref-relative-path)
+     (switch-to-buffer (file-name-nondirectory vv-roam-link-file-name))
+     (v-roam-overview-refresh nil  vv-roam-back-relative-path (file-name-base vv-roam-link-file-name))
+     (switch-to-buffer (file-name-nondirectory vv-roam-cur-file-name))
      ))
 
 (defun v-roam-overview-refresh(vv-roam-create-single-file vv-roam-cur-file vv-roam-link-file)
@@ -285,14 +291,16 @@
               (if (search-forward "roam-connect-start" (point-max) t 1)
               	  (progn
               	    (newline)
-                    (insert (format "    \"%s\" -> \"%s\";" (file-name-base vv-roam-cur-file) (file-name-base vv-roam-link-file))))))
+                    ;;(insert (format "    \"%s\" -> \"%s\";" (file-name-base vv-roam-cur-file) (file-name-base vv-roam-link-file))))))
+                    (insert (format "    \"%s\" -> \"%s\";" vv-roam-cur-file vv-roam-link-file)))))
 	(progn
               ;; insert roam file connect 
               (goto-char (point-min))
               (if (search-forward "roam-connect-start" (point-max) t 1)
               	  (progn
               	    (newline)
-                    (insert (format "    \"%s\";" (file-name-base vv-roam-cur-file))))))
+                    ;;(insert (format "    \"%s\";" (file-name-base vv-roam-cur-file))))))
+                    (insert (format "    \"%s\";" vv-roam-cur-file)))))
        )  ;;end if
       (setq buffer-save-without-query t)
       (save-some-buffers)
