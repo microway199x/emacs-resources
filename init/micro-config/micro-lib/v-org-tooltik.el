@@ -215,8 +215,8 @@
           (vv-roam-link-file-name (if (equal "y" (read-string "reference exists file?, if yes,type y:"))
 		 		  (expand-file-name (read-file-name "select the reference note name:"))
                                   (read-string "input the reference note name, if no,type N:")))
-          (vv-roam-ref-relative-path  (file-relative-name vv-roam-link-file-name vv-roam-cur-file-name ))
-          (vv-roam-back-relative-path (file-relative-name vv-roam-cur-file-name vv-roam-link-file-name ))
+          (vv-roam-ref-relative-path  (file-relative-name vv-roam-link-file-name (file-name-directory vv-roam-cur-file-name )))
+          (vv-roam-back-relative-path (file-relative-name vv-roam-cur-file-name (file-name-directory vv-roam-link-file-name )))
 
           (vv-roam-ref-link (format"roam ref note: [[file:%s]]" vv-roam-ref-relative-path))
           (vv-roam-back-link (format"roam back note: [[file:%s]]"  vv-roam-back-relative-path)))
