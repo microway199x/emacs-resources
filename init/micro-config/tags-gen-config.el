@@ -27,7 +27,9 @@
     and set tags-table-list to tags-table-list """
     (interactive "Dproj root dir: ")
     ;;dir-name: function parameter input at mini-buffer
-    (shell-command
+    
+     (setq v-tags-proj-root dir-name)
+     (shell-command
        (format "rm -rf %s/.PROJ_TAGS"  v-tags-proj-root))
      (eshell-command 
       (format "find %s -type f -name \"*.[svch]\" | etags -f .PROJ_TAGS" dir-name))
