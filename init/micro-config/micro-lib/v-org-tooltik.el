@@ -237,9 +237,9 @@
             (insert vv-roam-back-link)))
      ;; refresh roam overview file 
      (switch-to-buffer (file-name-nondirectory vv-roam-cur-file-name))
-     (v-roam-overview-refresh nil (file-name-base vv-roam-cur-file-name) vv-roam-ref-relative-path)
+     (v-roam-overview-refresh nil (file-name-nondirectory vv-roam-cur-file-name) vv-roam-ref-relative-path)
      (switch-to-buffer (file-name-nondirectory vv-roam-link-file-name))
-     (v-roam-overview-refresh nil  vv-roam-back-relative-path (file-name-base vv-roam-link-file-name))
+     (v-roam-overview-refresh nil  vv-roam-back-relative-path (file-name-nondirectory vv-roam-link-file-name))
      (switch-to-buffer (file-name-nondirectory vv-roam-cur-file-name))
      ))
 
