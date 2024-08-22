@@ -108,7 +108,7 @@
 (setq org-todo-keywords
   '((type "工作---(w)" "学习---(s)" "休闲---(l)" "|")
     (sequence "?" ">" "=" "|"  "#")
-    (sequence "TODO(t)" "IMDO" "ONGO(o)" "|" "DONE(d!)" "ABORT(a!)")))
+    (sequence "TODO(t)" "IMDO" "BOXD" "ONGO(o)" "WAIT" "|" "DONE(d!)" "ABORT(a!)")))
 ;; (setq org-todo-keywords
 ;;   '((type "工作---(w!)" "学习---(s!)" "休闲---(l!)" "|")
 ;;     (sequence "TODO===(t!)" "IMDO===" "ONGO>>>(o!)" "|" "DONE---(d!)" "ABORT--(a!)")))
@@ -120,9 +120,11 @@
         (">" . "skyblue")
         ("=" . "red")
         ("#" . "green")
-	("TODO" . "red")
+	    ("TODO" . "red")
         ("IMDO" . "red")
+	    ("BOXD" . "red")
         ("ONGO" . "skyblue")
+        ("WAIT" . "skyblue")
         ("DONE" . "green")
         ("ABORT" . "gray")))
 
