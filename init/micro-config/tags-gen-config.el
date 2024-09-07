@@ -17,7 +17,7 @@
       ;; normally system has Ctags, use ctags --help try, not need conffig ctags command path
       ;; (setq path-to-ctags "/opt/local/bin/ctags") ;; config which ctags-program-used-path here
      ;;(format "%s -f TAGS -e -R %s" path-to-ctags (directory-file-name dir-name)))
-       (format "ctags -f .PROJ_TAGS -e -R %s --language-force=Verilog"  v-tags-proj-root))
+       (format "ctags -f .PROJ_TAGS -R %s --language-force=Verilog"  v-tags-proj-root))
 
        (setq tags-table-list (cons  (concat v-tags-proj-root ".PROJ_TAGS") tags-table-list)))
 
