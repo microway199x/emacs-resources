@@ -21,7 +21,7 @@
 (require 'deft)
 
 (setq deft-extensions '("md" "txt" "tex" "org"))
-(setq deft-directory "D:\\git\\micro-notes")
+(setq deft-directory "D:\\micro_library\\git\\micro-notes")
 (setq deft-recursive t)
 
 (global-set-key [f8] 'deft)
