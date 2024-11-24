@@ -2,7 +2,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;create tags use Ctags: use exuberant-ctags or universal-ctags(recommended)
-
 ;; (setq v-tags-default-directory "<the proj root>")
   (defun v-create-ctags (dir-name)
     """Create tags file use interactive <D> select directory
