@@ -1,0 +1,134 @@
+# -*- mode: snippet -*-
+# name:gtd-box 
+# key:gtd-box
+# --
+#* Week:: ${1:week-num} Date:: `(org-insert-time-stamp (current-time))`
+* habits
+** TODO example
+   SCHEDULED:  <2023-12-25 Mon .+7d>
+  :PROPERTIES:
+  :STYPE: habit
+  :END:
+* FAQ[/]
+** Item-1[/]
+** Item-2[/]
+** Inbox[/]
+* Scheduled-Todo[/]                            :< week:
+** task_1: <subtask 分类建议 3～～5 类>
+*** InBox:subtask_1
+**** 完成 xxx 模块接口信号整理                          :task_1:subtask_1:
+**** 完成 xxx 模块 LRS 整理                            :task_1:subtask_1:
+*** InBox:subtask_2
+**** 完成 xxx 模块 RTL coding                           :task_1:subtask_2:
+**** 完成 xxx 模块 Lint 检查                            :task_1:subtask_2:
+**** 完成 xxx 模块预期综合                              :task_1:subtask_2:
+*** InBox:subtask_3
+**** xxxx                                               :task_1:subtask_3:
+*** InBox:IMDO: 
+**** 完成 xxx 模块预期综合                              :task_1:subtask_2:
+*** Wait:X: 
+**** 等待XXX 交付                                       :task_1:subtask_2:
+*** <2023-12-25 Mon>
+**** TODO [#A] imdo-1                                     :task_1:subtask_3:
+**** TODO [#A] imdo-2                                     :task_1:subtask_2:
+**** TODO [#A] todo-3                                     :task_1:subtask_3:
+**** BOXD [#B] 任务描述                                   :task_1:subtask_1:
+*** <2025-03-03 一>
+**** TODO [#A] imdo-1                                     :task_1:subtask_3:
+**** TODO [#A] imdo-2                                     :task_1:subtask_2:
+**** TODO [#A] todo-3                                     :task_1:subtask_3:
+**** BOXD [#B] 任务描述                                   :task_1:subtask_1:
+** task_2: <subtask 分类建议 3～～5 类>
+*** InBox:subtask_2
+**** 完成 xxx 模块接口信号整理                :task_2:subtask_2:interface:
+**** 完成 xxx 模块 LRS 整理                         :task_2:subtask_2:LRS:
+*** InBox:subtask_2
+**** 完成 xxx 模块 RTL coding                       :task_2:subtask_2:RTL:
+**** 完成 xxx 模块 Lint 检查                        :task_2:subtask_2:RTL:
+**** 完成 xxx 模块预期综合                              :task_2:subtask_2:
+*** InBox:subtask_3
+**** xxxx                                               :task_2:subtask_3:
+*** InBox:IMDO: 
+**** 完成 xxx 模块预期综合                              :task_2:subtask_2:
+*** Wait:X: 
+**** 等待XXX 交付                                       :task_2:subtask_2:
+*** <2023-12-25 Mon>
+**** TODO [#A] imdo-1                                     :task_2:subtask_3:
+**** TODO [#A] imdo-2                                     :task_2:subtask_2:
+**** TODO [#A] todo-3                                     :task_2:subtask_3:
+**** BOXD [#B] 任务描述                                   :task_2:subtask_2:
+*** <2025-03-03 一>
+**** TODO [#A] imdo-1                                     :task_2:subtask_3:
+**** TODO [#A] imdo-2                                     :task_2:subtask_2:
+**** TODO [#A] todo-3                                     :task_2:subtask_3:
+**** BOXD [#B] 任务描述                                   :task_2:subtask_2:
+
+** Conceled[/]
+* Scheduled-Long[/]                            :break down:
+** task_1:< 任务分解表，通过 excel/WBS 工具完成 task 分解、完成路标、完成标准 >
+1. 《task_1_开发任务分解 & 跟踪.xlsx》
+2. 任务分解建议也按照 3～5 大类一个层次，逐步向下分解（对应到执行，subtask2 为第
+   一层分解）
+3. 任务细分每一层分类 3～5 类，最多不超过 7 类；
+** task_2:< 任务分解表，通过 excel/WBS 工具完成 task 分解、完成路标、完成标准 >
+1. 《task_2_开发任务分解 & 跟踪.xlsx》
+
+** Mics[/]
+
+* 原则 : 既见森林，也见树木
+1. 既要看到和关注到任务执行的全貌和状态，执行上又能简单的按照优先级、时间 顺序的
+   执行。
+2. 如下：既可以关注目标全貌，又可以随时收集想法。既能按时间安排线性执行，又可以
+   按照分类归档查询。
+** 目标全貌：“森林”， 实现方向 & 路标
+ 1. task 开始前，task 的目标以及执行路标（关键时间节点、以及对一个的结果要求）
+ 2. 通过 excel/WBS 等工具对 task 进行分解，并明确各个 subtask 的执行顺序、优先级
+    以及对应的结果标准。<分解到明确的中粒度任务>
+ 3. 对目标分解也进行分层、分类管理，每一层任务归档到 3~5 个分类中；《所以执行时，
+    schedule_todo 中的子任务分类到三层以内，层次太多容易混乱》
+    + uArch
+      + 需求收集；
+      + 方案分解以及数据流整理；
+      + 文档撰写
+        + HLD 文档
+        + LRS 文档 &LLD 文档
+        + 接口信号 interface 整理
+    + RTL
+      + Coding
+      + 工具检查
+      + 验证确认
+      + xxx
+    + 质量检查
+      + 功能检查
+        + 典型场景波形检查
+        + 边界场景分析 & 波形检查
+        + RTL code review
+        + 交互模块之间时序确认
+        + xxx
+      + 工具检查确认
+        + CDC Log 确认
+        + RDC Log 确认
+        + DC 综合 Log 确认
+        + SDC 确认
+        + xxx
+      + 需求反向确认
+        + LRS & 需求实现确认
+        + LRS & RTL 落地实现确认
+        + xxx
+      + xxx
+** 执行：“树木”, 明确的动作：做什么，结果是什么
+1. 分类收集：对大 task 进行分解，并用 InBox 对任务、想法等按照 tag 分类收集（对
+   应 task 分解时的 subtask 分类，分类最好 3～5 类，分类太小太模糊，分类太多太容
+   易混乱）;
+   + 根据 WBS 分解后的目标进一步分解到可直接执行的 <明确的小粒度任务>;
+   + 随时收集想法、疑问，并归类 (归类到 task 第一层的3～5 类);
+   + 设定优先级，便于后续执行;
+2. 执行：
+   + 每天从 InBox 中选择高优先级的任务执行，并对任务添加 tag( 和 InBox 中的分类
+     tag 对应 )，并按照时间线执行、记录。
+   + 执行过程中，收集任务的必要信息、记录执行状况和 Log。
+   + 执行结果：执行结束后，按情况更新执行状况（5W2H？）、过程和结果，从而能及时
+     反馈，增加动力和信心。
+   + 任务 log: 任务执行过程中，信息要随时记录，并且按照 tag 标签用于分类查询。
+     （tag 分类可以使用多 tag，从而实现分类进一步细分，但是不建议超过 3 层 tag）
+
