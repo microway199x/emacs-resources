@@ -18,12 +18,11 @@
 *** schedule-to date task-1
 *** schedule-to date task-2
 *** schedule-to date task-3
-** Planed tasks[/]
-** Inbox[/]
-** Wait[/]
-** Conceled[/]
+** Inbox:X: [/]
+** Wait:X: [/]
+** Conceled [/]
 * Scheduled-Long[/]                            :break down:
-* Wait[/]
-* Inbox[/]
-* Conceled[/]
+** Wait[/]
+** Inbox[/]
+** Conceled[/]
 * Mics[/]

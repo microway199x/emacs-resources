@@ -121,10 +121,9 @@
         ("=" . "red")
         ("#" . "green")
 	    ("TODO" . "red")
-        ("IMDO" . "red")
 	    ("BOXD" . "red")
         ("ONGO" . "skyblue")
-        ("WAIT" . "skyblue")
+        ("WAIT" . "purple")
         ("DONE" . "green")
         ("ABORT" . "gray")))
 
