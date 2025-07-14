@@ -131,7 +131,7 @@ occurence of CHAR."
                  (progn
                    (org-clock-out) 
                    (setq visible-bell nil)
-                   (ding-ding)
+                   (v-ding-ding)
                    (setq visible-bell t))
                  t)))
 
