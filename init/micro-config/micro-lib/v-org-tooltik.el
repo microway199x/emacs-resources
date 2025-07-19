@@ -136,8 +136,8 @@
     (let* ((background (alist-get 'background-mode (frame-parameters)))
            (background-dark-p (string= background "dark"))
            (colors (if background-dark-p
-                       (list "#aa557f" "DarkGreen" "DarkSlateGray" "DarkSlateBlue")
-                     (list "#F6B1C3" "#FFFF9D" "#BEEB9F" "#ADD5F7")))
+                       (list "#F6B1C3" "#FFFF9D" "#BEEB9F" "#ADD5F7")
+                       (list "#aa557f" "DarkGreen" "DarkSlateGray" "DarkSlateBlue")))
            pos
            duration)
       (nconc colors colors)
