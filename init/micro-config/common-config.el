@@ -1,11 +1,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;基本设置
-;;(set-frame-position (selected-frame) 0 0)
-;;(setq default-frame-alist
-;;             '((height . 28) (width . 130) (menu-bar-lines . 20) (tool-bar-lines . 2)))
-;;(global-linum-mode 1)  ;;左边显示行号
 
+;;Line mode Config,;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;(global-linum-mode 1)  ;;左边显示行号
 ;;(global-hl-line-idle-mode 1);;空闲时高亮当前行
+
+;;highlight back and face config ;;;;;;;;;;;;;;;;;;;
 ;;通过M-x describe-face，回车，之后选择high-light配置显示颜色等
 ;;或通过下面的命令配置
    ;; (1)click on MenuBar Options option,
@@ -20,38 +20,82 @@
 (set-face-foreground 'highlight 'unspecified)
 (set-face-underline 'highlight t)
 
-(setq echo-keystrokes 0.1)   ;;;尽快显示按键序列
-(setq visible-bell t);;关闭烦人的出错时的提示声
-(fset 'yes-or-no-p 'y-or-n-p)
+
+;;frame & window config ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;鼠标只会滑到离边界3行的位置
 (setq scroll-margin 3
-      scroll-conservatively 10000)           ;;;鼠标只会滑到离边界3行的位置
+      scroll-conservatively 10000)           
+
+(tool-bar-mode -1)  ;;隐藏tool bar
+
+;;;frame setting;;;;;;;;;;
+;;(set-frame-position (selected-frame) 0 0)
+;;(setq default-frame-alist
+;;             '((height . 28) (width . 130) (menu-bar-lines . 20) (tool-bar-lines . 2)))
+
+;;显示当前buffer路径名,
 (setq frame-title-format
-      (list  "%b"
-       "("
-      '(buffer-file-name "%f" (dired-directory dired-directory "%b")) ;;显示当前buffer路径名
-      ")"))
-;; 默认显示 80列就换行
+      (list  "%b" 
+             "(" 
+             '(buffer-file-name "%f" (dired-directory dired-directory "%b")) 
+             ")"  ))
+
+;; window Text width setting 默认显示 80列就换行
 (setq-default fill-column 80) 
 (global-display-fill-column-indicator-mode)
+;;;line wrap mode setting
+;; 启用全局visual line模式
+(global-visual-line-mode 1)
+(global-visual-wrap-prefix-mode 1)
+;; 设置基于单词边界的折行前缀
+(setq word-wrap-by-category t)
+;; 可选：调整折行符号显示
+(setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
+
+;;cursor display setting ;;;;;;;;;;;
+;;光标靠近鼠标指针时，让鼠标指针自动让开，别挡住视线。
+(mouse-avoidance-mode 'animate)  
+;;指针不要闪，眼睛花了
+(blink-cursor-mode -1)  
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;设置显示括号匹配
+(show-paren-mode t)  
+(setq show-paren-style 'parenthesis)
+
+;;;easy use setting ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 一打开就起用 text 模式。
 (setq default-major-mode 'text-mode) 
-(setq-default tab-width 4) 
+
+;;tab setting  ;;;;;;;;;;;;;;;;;;;;;
 (setq tab-width 4) 
+(setq-default tab-width 4) 
 (setq indent-tabs-mode nil) 
 (setq-default indent-tabs-mode nil) 
-(setq inhibit-startup-message t)
-(setq gnus-inhibit-startup-message t)
-(setq-default make-backup-files nil);;不生成临时文件
-(setq make-backup-files nil);;不生成临时文件
-(mouse-avoidance-mode 'animate)  ;;光标靠近鼠标指针时，让鼠标指针自动让开，别挡住视线。
-;;允许emacs和外部其他程序的粘贴
-(setq select-enable-clipboard t)
-(blink-cursor-mode -1)  ;;指针不要闪，我得眼睛花了
-(tool-bar-mode -1)  ;;隐藏tool bar
-(global-auto-revert-mode t);;文件更改后自动加载文件
-;;(setq auto-save-default nil);;默认300s自动保存一次
+
+;;short cuts set;;;;;;;;;;;;;;;;;;;;
+(setq echo-keystrokes 0.1)   ;;;尽快显示按键序列
+(fset 'yes-or-no-p 'y-or-n-p)
+
 (global-unset-key  (kbd "C-SPC"))
 (global-set-key  (kbd "M-SPC") 'set-mark-command)
+
+;;mics setting;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;关闭烦人的出错时的提示声
+(setq visible-bell t)
+(setq inhibit-startup-message t)
+(setq gnus-inhibit-startup-message t)
+
+;;backup file config ;;;;;;;;;;;;;;;
+(setq-default make-backup-files nil);;不生成临时文件
+(setq make-backup-files nil);;不生成临时文件
+
+;;允许emacs和外部其他程序的粘贴;;
+(setq select-enable-clipboard t)
+
+;;auto revert and auto save ;;;;;;;;
+(global-auto-revert-mode t);;文件更改后自动加载文件
+;;(setq auto-save-default nil);;默认300s自动保存一次
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;设置主题
@@ -98,10 +142,6 @@
   ;;(setq current-language-environment 'gbk)'
   )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;设置显示括号匹配
-(show-paren-mode t)  
-(setq show-paren-style 'parenthesis)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;设置常用公共函数
