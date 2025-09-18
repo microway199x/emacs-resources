@@ -37,9 +37,9 @@
 (defun micro-htmlize-dir-set()
   (if (eq system-type `windows-nt)
       (add-to-list 'load-path 
-              (concat micro-plugin-path "emacs-htmlize\\"))
+              (concat micro-plugin-path "htmlize\\"))
       (add-to-list 'load-path 
-              (concat micro-plugin-path "emacs-htmlize/"))))
+              (concat micro-plugin-path "htmlize/"))))
 (micro-htmlize-dir-set)
 
 ;;(require 'htmlize)
@@ -95,6 +95,11 @@
 
 (setq org-plantuml-jar-path
       (expand-file-name "C:\\tools\\plantuml.jar"))
+;;;{{2.1 org export babel设置
+(setq org-export-babel-evaluate nil)
+(setq org-confirm-babel-evaluate nil)
+
+;;;}}2.1 org export babel设置
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;}} 2.0 org babel 支持设置
 
