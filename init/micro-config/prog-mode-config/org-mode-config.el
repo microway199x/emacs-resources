@@ -52,6 +52,18 @@
         :rules "all"
         :frame "border"))
 
+(defadvice org-html-paragraph (before org-html-paragraph-advice (paragraph contents info) activate)
+  "Join consecutive Chinese lines into a single long line without unwanted space when exporting `org-mode' to html."
+  (let* ((origin-contents (ad-get-arg 1))
+         (fixed-contents
+          (replace-regexp-in-string
+           (rx
+            (group (or (category chinese) "<" ">"))
+            (regexp "\n")
+            (group (or (category chinese) "<" ">")))
+           "\\1\\2"
+           origin-contents)))
+    (ad-set-arg 1 fixed-contents)))
 
 ;;;;1.2 使用pandoc ORG-MODE 转 WROD，
 (defun v-org-export-docx ()
