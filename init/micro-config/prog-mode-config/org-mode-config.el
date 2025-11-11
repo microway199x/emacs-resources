@@ -125,12 +125,15 @@
 (setq org-todo-keywords
   '((type "工作---(w)" "学习---(s)" "休闲---(l)" "|")
     (sequence "?" ">" "=" "|"  "#")
-    (sequence "TODO(t)" "IMDO" "BOXD" "ONGO(o)" "WAIT" "|" "DONE(d!)" "ABORT(a!)")))
+    (sequence "TODO(t)" "BOXD" "ONGO(o)" "WAIT" "|" "DONE(d!)" "ABORT(a!)")))
 ;; (setq org-todo-keywords
 ;;   '((type "工作---(w!)" "学习---(s!)" "休闲---(l!)" "|")
 ;;     (sequence "TODO===(t!)" "IMDO===" "ONGO>>>(o!)" "|" "DONE---(d!)" "ABORT--(a!)")))
 
 ;;;3.2 TODO 关键字face
+;;;A: 重要，紧急  : 突发
+;;;B: 重要，不紧急: 提前规划，预防优先
+;;;C: 不重要，不紧急 or 紧急
 (setq org-todo-keyword-faces 
       '(
         ("?" . "red")
@@ -138,7 +141,6 @@
         ("=" . "red")
         ("#" . "green")
         ("TODO" . "red")
-        ("IMDO" . "red")
         ("BOXD" . "red")
         ("ONGO" . "skyblue")
         ("WAIT" . "purple")
