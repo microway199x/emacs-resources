@@ -164,6 +164,15 @@
 ;;;}}4.0 mics& funcs setting 设置常用公共函数
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;{{5.0 org-mode beautify code 
+;;; 调整SRC code 代码颜色
+(setq org-fontify-quote-and-verse-blocks t)
+(set-face-attribute 'org-code nil :background
+                     (face-attribute 'org-block :background))
+
+;;;}}5.0 org-mode beautify code 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;org setting end here

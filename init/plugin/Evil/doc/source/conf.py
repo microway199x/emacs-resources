@@ -25,7 +25,7 @@ copyright = '2011-2019, Eivind Fonn, Frank Fischer, Vegard Øye'
 author = 'Eivind Fonn, Frank Fischer, Vegard Øye'
 
 # The full version, including alpha/beta/rc tags
-release = '1.14.0'
+release = '1.15.0'
 
 master_doc = 'index'
 
@@ -83,8 +83,3 @@ exclude_patterns = []
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']

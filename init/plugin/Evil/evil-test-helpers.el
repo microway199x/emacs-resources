@@ -2,8 +2,8 @@
 
 ;; Author: Vegard Øye <vegard_oye at hotmail.com>
 ;; Maintainer: Vegard Øye <vegard_oye at hotmail.com>
-;; Package-Requires: ((evil "1.14.0"))
-;; Version: 1.14.0
+;; Package-Requires: ((evil "1.15.0"))
+;; Version: 1.15.0
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -167,17 +167,15 @@ raised.  Remaining forms are evaluated as-is.
                                  `(execute-kbd-macro
                                    (apply #'vconcat
                                           (mapcar #'listify-key-sequence
-                                                  (mapcar #'eval ',form)))))
+                                                  (list ,@form)))))
                                 ((memq (car-safe form) '(kbd vconcat))
                                  `(execute-kbd-macro ,form))
-                                (t
-                                 form))))
+                                (t form))))
                           (if error-symbol
                               `(should-error ,result :type ',error-symbol)
                             result))))
                   body)))
-         (and (buffer-name buffer)
-              (kill-buffer buffer))))))
+         (when (buffer-name buffer) (kill-buffer buffer))))))
 
 (defmacro evil-test-selection (string &optional end-string
                                       before-predicate after-predicate)

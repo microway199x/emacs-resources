@@ -1,9 +1,9 @@
-;; evil-tests.el --- unit tests for Evil -*- coding: utf-8 -*-
+;; evil-tests.el --- unit tests for Evil -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; Author: Vegard Øye <vegard_oye at hotmail.com>
 ;; Maintainer: Vegard Øye <vegard_oye at hotmail.com>
 
-;; Version: 1.14.0
+;; Version: 1.15.0
 
 ;;
 ;; This file is NOT part of GNU Emacs.
@@ -61,11 +61,19 @@
 ;;
 ;; This file is NOT part of Evil itself.
 
+;; FIXME: Merely loading an ELisp file should not change Emacs's config!
+(setq load-prefer-newer t)
+
 (require 'cl-lib)
 (require 'elp)
 (require 'ert)
+;; Load non-compiled `evil-ex'. (It defines `evil-parser' - which is
+;; needed by `evil-test-parser' - only inside an `eval-when-compile'.)
+(require 'evil-ex "evil-ex.el")
 (require 'evil)
+(require 'evil-digraphs)
 (require 'evil-test-helpers)
+(require 'ispell)
 
 ;;; Code:
 
@@ -77,22 +85,21 @@
 
 (defun evil-tests-initialize (&optional tests profiler interactive)
   (setq profiler (or profiler evil-tests-profiler))
-  (when (listp profiler)
+  (when (consp profiler)
     (setq profiler (car profiler)))
   (when profiler
     (setq evil-tests-profiler t)
     (setq profiler
-          (or (cdr (assq profiler
-                         '((call . elp-sort-by-call-count)
-                           (average . elp-sort-by-average-time)
-                           (total . elp-sort-by-total-time))))))
+          (cdr (assq profiler
+                     '((call . elp-sort-by-call-count)
+                       (average . elp-sort-by-average-time)
+                       (total . elp-sort-by-total-time)))))
     (setq elp-sort-by-function (or profiler 'elp-sort-by-call-count))
     (elp-instrument-package "evil"))
   (if interactive
       (if (y-or-n-p-with-timeout "Run tests? " 2 t)
           (evil-tests-run tests interactive)
-        (message "You can run the tests at any time \
-with `M-x evil-tests-run'"))
+        (message "You can run the tests at any time with `M-x evil-tests-run'"))
     (evil-tests-run tests)))
 
 (defun evil-tests-run (&optional tests interactive)
@@ -197,13 +204,12 @@ with `M-x evil-tests-run'"))
 
 (defun evil-test-change-state (state)
   "Change state to STATE and check keymaps"
-  (let (mode keymap local-mode local-keymap tag)
-    (evil-change-state state)
-    (setq mode (evil-state-property state :mode)
-          keymap (evil-state-property state :keymap t)
-          local-mode (evil-state-property state :local)
-          local-keymap (evil-state-property state :local-keymap t)
-          tag (evil-state-property state :tag t))
+  (evil-change-state state)
+  (let ((mode (evil-state-property state :mode))
+        ;; (keymap (evil-state-property state :keymap t))
+        (local-mode (evil-state-property state :local))
+        ;; (local-keymap (evil-state-property state :local-keymap t))
+        (tag (evil-state-property state :tag t)))
     (when (functionp tag)
       (setq tag (funcall tag)))
     (ert-info ("Update `evil-state'")
@@ -292,71 +298,72 @@ with `M-x evil-tests-run'"))
     (evil-test-change-state 'normal)))
 
 (ert-deftest evil-test-execute-in-normal-state ()
-  "Test `evil-execute-in-normal-state'."
+  "Execute Normal state command in Insert state (`evil-execute-in-normal-state')."
   :tags '(evil)
-  (ert-info ("Execute normal state command in insert state")
+  (evil-test-buffer "[a]bcdef\n"
+    ("I")
+    (should (evil-insert-state-p))
+    ("\C-ox")
+    (ert-info ("Should return to Insert state") (should (evil-insert-state-p)))
+    "[b]cdef\n"
+    ("\C-oA")
+    (ert-info ("Should return to Insert state after Insert state command")
+      (should (evil-insert-state-p)))
+    ("bcdef[]\n"))
+  (ert-info ("Cursor is placed correctly afterwards")
     (evil-test-buffer
-      "[a]bcdef\n"
-      ("I")
-      (should (evil-insert-state-p))
-      ("\C-ox")
-      (ert-info ("Should return to insert state")
-        (should (evil-insert-state-p)))
-      "[b]cdef\n"
-      ("\C-oA")
-      (ert-info ("Should return to insert state after insert state command")
-        (should (evil-insert-state-p)))
-      ("bcdef[]\n"))
-    (ert-info ("Cursor is placed correctly afterwards")
-      (evil-test-buffer
-        :state insert
-        "abcdefg[]"
-        ("\C-o~")
-        "abcdefG[]")
-      (evil-test-buffer
-        :state insert
-        "abcdefg[]"
-        ("\C-ozz")
-        "abcdefg[]")
-      (evil-test-buffer
-        :state insert
-        "abc[]defg"
-        ("\C-o$")
-        "abcdefg[]")
-      (evil-test-buffer
-        :state insert
-        "abcdefg[]"
-        ("\C-o^")
-        "[]abcdefg")
-      (evil-test-buffer
-        :state insert
-        "abcdefg[]"
-        ("\C-oi")
-        "abcdef[]g")
-      (evil-test-buffer
-        "line1\nli[n]e2"
-        ("ma" "kA" "\C-o`a")
-        "line1\nli[]ne2"))
-    (ert-info ("Can enter replace state and stay in it")
-      (evil-test-buffer
-        :state insert
-        "abc[]defg"
-        ("\C-oRfoo")
-        "abcfoog"))
-    (ert-info ("Insert count is ignored")
-      (evil-test-buffer
-        "[]"
-        ("2i" "abcdef" "\C-o~" "g" [escape])
-        "abcdeF[g]"))
-    (ert-info ("Can execute evil-repeat in normal state")
-      (evil-test-buffer
-        ;; Although this is the same in vim, text inserted after the temporary
-        ;; normal command is not recorded for repetition, which is a subtle
-        ;; (but arguably more useful) difference
-        :state insert
-        "ab[]cfg"
-        ("\C-o~de\C-o.")
-        "abCdeF[]g"))))
+      :state insert
+      "abcdefg[]"
+      ("\C-o~")
+      "abcdefG[]")
+    (evil-test-buffer
+      :state insert
+      "abcdefg[]"
+      ("\C-ozz")
+      "abcdefg[]")
+    (evil-test-buffer
+      :state insert
+      "abc[]defg"
+      ("\C-o$")
+      "abcdefg[]")
+    (evil-test-buffer
+      :state insert
+      "abcdefg[]"
+      ("\C-o^")
+      "[]abcdefg")
+    (evil-test-buffer
+      :state insert
+      "abcdefg[]"
+      ("\C-oi")
+      "abcdef[]g")
+    (evil-test-buffer
+      :state insert
+      "\n[]"
+      ("\C-ok")
+      "[]\n")
+    (evil-test-buffer
+      "line1\nli[n]e2"
+      ("ma" "kA" "\C-o`a")
+      "line1\nli[]ne2"))
+  (ert-info ("Can enter replace state and stay in it")
+    (evil-test-buffer
+      :state insert
+      "abc[]defg"
+      ("\C-oRfoo")
+      "abcfoog"))
+  (ert-info ("Insert count is ignored")
+    (evil-test-buffer "[]"
+      ("2i" "abcdef" "\C-o~" "g" [escape])
+      "abcdeF[g]"))
+  (ert-info ("Can execute evil-repeat in normal state")
+    (evil-test-buffer
+      ;; Although this is the same in Vim, text inserted after the temporary
+      ;; normal command is not recorded for repetition, which is a subtle
+      ;; (but arguably more useful) difference.
+      :state insert
+      "ab[]cfg"
+      ("\C-o~de\C-o.")
+      "abCdeF[]g")))
 
 (defun evil-test-suppress-keymap (state)
   "Verify that `self-insert-command' is suppressed in STATE"
@@ -368,11 +375,11 @@ with `M-x evil-tests-run'"))
 suppression keymap comes first")
       (setq evil-operator-state-minor-mode nil
             evil-operator-state-local-minor-mode nil))
-    (should (eq (key-binding "Q") #'undefined))
+    (should (eq (key-binding "£") #'undefined))
     (ert-info ("Don't insert text")
       ;; may or may not signal an error, depending on batch mode
       (condition-case nil
-          (execute-kbd-macro "QQQ")
+          (execute-kbd-macro "£££")
         (error nil))
       (should (string= (buffer-substring 1 4) ";; ")))))
 
@@ -426,19 +433,28 @@ when exiting Operator-Pending state")
                   'bar))
       (evil-test-change-state 'emacs)
       (should-not (eq (lookup-key evil-operator-shortcut-map "b")
-                      'bar)))))
+                      'bar))))
+  (ert-info ("Compute shortcuts with original keymaps")
+    (evil-test-buffer "foo"
+     (define-key evil-normal-state-local-map (kbd "SPC x") #'evil-delete)
+     ;; evil-forward-char in motion map should not shadow the executed
+     ;; evil-delete binding above when populating shortcut map.
+     ((kbd "SPC x x"))
+     "")))
 
 (ert-deftest evil-test-auxiliary-maps ()
   "Test auxiliary keymaps"
   :tags '(evil state)
-  (let ((map (make-sparse-keymap)) aux)
+  ;; `evil-define-key' can't be used on a lexically-scoped keymap var.
+  (defvar evil--map)
+  (let ((evil--map (make-sparse-keymap)) aux)
     (ert-info ("Create a new auxiliary keymap")
-      (evil-define-key 'normal map "f" 'foo)
-      (setq aux (evil-get-auxiliary-keymap map 'normal))
+      (evil-define-key 'normal evil--map "f" 'foo)
+      (setq aux (evil-get-auxiliary-keymap evil--map 'normal))
       (should (evil-auxiliary-keymap-p aux))
       (should (eq (lookup-key aux "f") 'foo)))
     (ert-info ("Add to auxiliary keymap")
-      (evil-define-key 'normal map "b" 'bar)
+      (evil-define-key 'normal evil--map "b" 'bar)
       (should (eq (lookup-key aux "f") 'foo))
       (should (eq (lookup-key aux "b") 'bar)))))
 
@@ -481,10 +497,8 @@ when exiting Operator-Pending state")
     (let* ((first-line 1)
            (second-line (progn
                           (forward-line)
-                          (point)))
-           (third-line (progn
-                         (forward-line)
-                         (point))))
+                          (point))))
+      (forward-line)
       (ert-info ("Return the beginning and end unchanged \
 if they are the same")
         (should (equal (evil-normalize 1 1 'exclusive)
@@ -665,13 +679,20 @@ Below some empty line"
     ("aevil rulz " [escape])
     ";; Tevil rulz[ ]his buffer is for notes you don't want to save"))
 
-(ert-deftest evil-test-visual-append ()
-  "Test `evil-append' from visual state"
+(ert-deftest evil-test-visual-insert ()
+  "Test `evil-insert' in Visual state."
   :tags '(evil insert)
-  (evil-test-buffer
-    ";; [T]his buffer is for notes you don't want to save"
-    ("veA_evil rulz " [escape])
-    ";; This_evil rulz[ ] buffer is for notes you don't want to save"))
+  (ert-info ("Repeat insert over empty lines")
+    (evil-test-buffer :visual line "<\n\n[]>"
+      ("IX" [escape])
+      "X\nX\nX")))
+
+(ert-deftest evil-test-visual-append ()
+  "Test `evil-append' in Visual state."
+  :tags '(evil insert)
+  (evil-test-buffer "<fo[o]> bar"
+    ("A_evil rulz " [escape])
+    "foo_evil rulz[ ] bar"))
 
 (ert-deftest evil-test-open-above ()
   "Test `evil-open-above'"
@@ -741,10 +762,13 @@ de[f]
 (ert-deftest evil-test-insert-line ()
   "Test `evil-insert-line'"
   :tags '(evil insert)
-  (evil-test-buffer
-    ";; [T]his buffer is for notes you don't want to save"
+  (evil-test-buffer "foo [b]ar"
     ("Ievil rulz " [escape])
-    "evil rulz[ ];; This buffer is for notes you don't want to save"))
+    "evil rulz[ ]foo bar")
+  (ert-info ("With count")
+    (evil-test-buffer "foo [b]ar"
+      ("2Ievil rulz " [escape])
+      "evil rulz evil rulz[ ]foo bar")))
 
 (ert-deftest evil-test-append-line ()
   "Test `evil-append-line'"
@@ -773,9 +797,23 @@ de[f]
       "abç[d]efgh")
     (ert-info ("with count")
       (evil-test-buffer
-      "abc[d]efgh"
-      ("R\C-u3\C-kd*")
-      "abcδδδ[g]h"))))
+        "abc[d]efgh"
+        ("R\C-u3\C-kd*")
+        "abcδδδ[g]h"))))
+
+(ert-deftest evil-test-track-insertion ()
+  "Test that the text of the previous insertion is tracked."
+  (ert-info ("Moving the cursor starts a new insertion")
+    (evil-test-buffer
+      ("iabc" [left] "xxx" [escape] "o\C-a")
+      "abxxxc\nxxx"))
+  (ert-info ("Autoindentation should be excluded")
+    (evil-test-buffer "\(setq x"
+      (emacs-lisp-mode)
+      ("o0\)" [escape] "o\C-a")
+      "(setq x
+      0)
+0\)")))
 
 ;;; Repeat system
 
@@ -893,7 +931,15 @@ If nil, KEYS is used."
       ("i(\M-f)" [escape])
       ";; (This[)] buffer is for notes you don't want to save"
       ("w.")
-      ";; (This) (buffer[)] is for notes you don't want to save")))
+      ";; (This) (buffer[)] is for notes you don't want to save"))
+  (ert-info ("Repeat search motion with offset")
+    (evil-select-search-module 'evil-search-module 'evil-search)
+    (evil-test-buffer
+      "[f]irst, second, third, fourth"
+      ("d/, /e" [return])
+      "[s]econd, third, fourth"
+      ("2.")
+      "[f]ourth")))
 
 (ert-deftest evil-test-repeat-register ()
   "Test repeating a register command."
@@ -936,7 +982,14 @@ If nil, KEYS is used."
       ("re'")
       "[é]; This buffer is for notes you don't want to save"
       ("3rc*")
-      "ξξ[ξ]This buffer is for notes you don't want to save"))
+      "ξξ[ξ]This buffer is for notes you don't want to save")
+    (ert-info ("Repeat replace digraph")
+      (evil-test-buffer
+        "ab[c]defghijkl"
+        ("rW*")
+        "ab[Ω]defghijkl"
+        ("fg" "2.")
+        "abΩdefΩ[Ω]ijkl")))
   (ert-info ("Replacing \\n should insert only one newline")
     (evil-test-buffer
       "(setq var xxx [y]yy zzz)\n"
@@ -1237,14 +1290,6 @@ evil\nrulz\nevil\nrul[z]
 evil\nrulz\nevil\nrulz\nevil\nrulz\nevil\nrulz\nevil\nrul[z]
 ;; and for Lisp evaluation.")))
 
-(ert-deftest evil-test-insert-line-with-count ()
-  "Test `evil-insert-line' with repeat count"
-  :tags '(evil repeat)
-  (evil-test-buffer
-    ";; [T]his buffer is for notes"
-    ("2Ievil rulz " [escape])
-    "evil rulz evil rulz[ ];; This buffer is for notes"))
-
 (ert-deftest evil-test-repeat-insert-line ()
   "Test repeating of `evil-insert-line'"
   :tags '(evil repeat)
@@ -1335,7 +1380,12 @@ ABCABC{
       ("10AABC" [escape])
       ";; This buffer is for notes.ABCABCABCABCABCABCABCABCABCAB[C]"
       ("11.")
-      ";; This buffer is for notes.ABCABCABCABCABCABCABCABCABCABCABCABCABCABCABCABCABCABCABCABCAB[C]")))
+      ";; This buffer is for notes.ABCABCABCABCABCABCABCABCABCABCABCABCABCABCABCABCABCABCABCABCAB[C]"))
+  (ert-info ("Repeat append over empty lines")
+    (evil-test-buffer
+      ""
+      ("i" [return] [return] [return] [return] [return] [return] [escape] "gg\C-vGAX" [escape])
+      "X\nX\nX\nX\nX\nX\n")))
 
 (ert-deftest evil-test-append-line-vcount ()
   "Test `evil-append-line' with vertical repeating"
@@ -1602,6 +1652,17 @@ New Tex[t]
       ((kbd "C-v") "jj$AXXX" [escape])
       "line 1line 1line 1XX[X]\nline 2XXX\nline 3line 3XXX\n")))
 
+(ert-deftest evil-visual-block-insert ()
+  "Test inserting (prepending) in visual block."
+  :tags '(evil visual insert)
+  (ert-info ("Prepend and repeat")
+    (evil-test-buffer
+      "[a]lpha\nbravo\ncharlie\ndelta\necho\nfoxtrot\ngolf"
+      ("\C-v" "jj" "I" "zulu" [escape])
+      "zul[u]alpha\nzulubravo\nzulucharlie\ndelta\necho\nfoxtrot\ngolf"
+      ("/delta" [return] ".")
+      "zulualpha\nzulubravo\nzulucharlie\nzul[u]delta\nzuluecho\nzulufoxtrot\ngolf")))
+
 (ert-deftest evil-test-repeat-digraph ()
   "Test repeat of insertion of a digraph."
   :tags '(evil digraph repeat)
@@ -1613,6 +1674,20 @@ New Tex[t]
     "Line with ’ several apostrophes [’], yeah."))
 
 ;;; Operators
+
+(ert-deftest evil-test-indent ()
+  "Test `evil-indent'"
+  :tags '(evil visual operator)
+  (evil-test-buffer
+    :state visual
+    "<    Line with too much indentation.>"
+    ("=")
+    "Line with too much indentation.")
+  (ert-info ("Can repeat evil-indent without errors")
+    (evil-test-buffer
+     "[ ]x\n x"
+     ("==j.")
+     "x\nx")))
 
 (ert-deftest evil-test-keypress-parser ()
   "Test `evil-keypress-parser'"
@@ -1902,7 +1977,7 @@ New Tex[t]
       ";; [T]his buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y3s")
       (should (string= (current-kill 0) "Thi\nIf \nthe"))
       (should (eq (car-safe (get-text-property 0 'yank-handler
@@ -1935,7 +2010,38 @@ New Tex[t]
       "a\n[b]\nc\nd\ne\nf\n"
       (":yank r 3")
       "a\nb\nc\nd\ne\nf\n"
-      (should (string= (substring-no-properties (evil-get-register ?r)) "b\nc\nd\n")))))
+      (should (string= (substring-no-properties (evil-get-register ?r)) "b\nc\nd\n"))))
+  (ert-info (":yank with range yanks without moving point")
+    (evil-test-buffer
+      "[a]\nb\nc\nd\ne\n"
+      (":4y" [return] "p")
+      "a\n[d]\nb\nc\nd\ne\n")
+    (evil-test-buffer
+      "[a]\nb\nc\nd\ne\n"
+      (":+4y" [return] "p")
+      "a\n[e]\nb\nc\nd\ne\n")
+    (evil-test-buffer
+      "1\n2\n3\n4\n5\n6\n7\n8\n9\n1[0]"
+      (":-5,.y")
+      "1\n2\n3\n4\n5\n6\n7\n8\n9\n1[0]")
+    (evil-test-buffer
+      "1\n2\n3\n4\n[5]\n6\n7\n8\n9\n10"
+      ("my" "G" ":'y,.y")
+      "1\n2\n3\n4\n5\n6\n7\n8\n9\n[1]0")))
+
+(ert-deftest evil-test-yank-line ()
+  "Test `evil-yank-line'"
+  :tags '(evil operator)
+  (ert-info ("Yank line with eof being part of visual selection")
+    (evil-test-buffer
+      ";; This is line one
+;; This is lin[e] two
+;; This is line three"
+      ("v$Yjp")
+      ";; This is line one
+;; This is line two
+;; This is line three
+[;]; This is line two")))
 
 (ert-deftest evil-test-delete ()
   "Test `evil-delete'"
@@ -1993,7 +2099,7 @@ New Tex[t]
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("d3s")
       "[T]his buffer is for notes you don't want to save.
 If you want to create a file, visit that file with C-x C-f,
@@ -2045,7 +2151,7 @@ then enter the text in that file's own buffer."))
       ";; This <buffe[r]> is for notes,
 and for Lisp evaluation."
       ("D")
-      "[a]nd for Lisp evaluation."))
+      "and for Lisp [e]valuation."))
   (ert-info ("Act on each line of block selection")
     (evil-test-buffer
       :visual block
@@ -2063,7 +2169,50 @@ and for Lisp evaluation."
       ("0P")
       "ine1 line1 line1line1 l
 ine2            line2 l
-ine3 line3      line3 l\n")))
+ine3 line3      line3 l\n"))
+  (ert-info ("Delete additional whole lines with count")
+    (evil-test-buffer
+     "a[a]a\nbbb\nc\n"
+     ("2D")
+     "a\nc\n"))
+  (ert-info ("Delete line with eof being part of visual selection")
+    (evil-test-buffer
+      ";; This is line one
+;; This is lin[e] two
+;; This is line three"
+      ("v$D")
+      ";; This is line one
+;; This is line three"))
+  (ert-info ("Deletion in normal state leaves point in the right place")
+    (evil-test-buffer
+      "alpha b[r]avo charlie\ndelta echo foxtrot\ngolf hotel india"
+      (should-not evil-start-of-line)
+      ("D")
+      "alpha [b]\ndelta echo foxtrot\ngolf hotel india"
+      ("/echo" [return] "C" "newtext" [escape])
+      "alpha b\ndelta newtex[t]\ngolf hotel india")
+    (let ((evil-start-of-line t))
+      (evil-test-buffer
+        "alpha b[r]avo charlie\ndelta echo foxtrot\ngolf hotel india"
+        ("D")
+        "alpha [b]\ndelta echo foxtrot\ngolf hotel india"
+        ("/echo" [return] "C" "newtext" [escape])
+        "alpha b\ndelta newtex[t]\ngolf hotel india")))
+  (ert-info ("Line deletion in visual state leaves point in the right place")
+    (evil-test-buffer
+      "alpha [b]ravo charlie\ndelta echo foxtrot\ngolf hotel india"
+      (should-not evil-start-of-line)
+      ("vD")
+      "delta [e]cho foxtrot\ngolf hotel india"
+      ("vX")
+      "golf h[o]tel india")
+    (let ((evil-start-of-line t))
+      (evil-test-buffer
+        "alpha [b]ravo charlie\ndelta echo foxtrot\ngolf hotel india"
+        ("vD")
+        "[d]elta echo foxtrot\ngolf hotel india"
+        ("vX")
+        "[g]olf hotel india"))))
 
 (ert-deftest evil-test-delete-folded ()
   "Test `evil-delete' on folded lines."
@@ -2084,7 +2233,7 @@ ine3 line3      line3 l\n")))
       "line1\n\n[\n]last line\n")))
 
 (ert-deftest evil-test-delete-backward-word ()
-  "Test `evil-delete-backward-word' in insert & replace states."
+  "Test `evil-delete-backward-word' in insert & replace states, and ex command-line."
   :tags '(evil)
   (ert-info ("evil-delete-backward-word in insert state")
     (let ((evil-backspace-join-lines t))
@@ -2113,7 +2262,20 @@ ine3 line3      line3 l\n")))
       ("\C-w")
       "alpha bravo [c]harlie delta"
       ("\C-w")
-      "alpha [b]ravo charlie delta")))
+      "alpha [b]ravo charlie delta"))
+  (ert-info ("evil-delete-backward-word in ex command-line")
+    (evil-test-buffer
+      "[ ]"
+      (":normal i" "one-two" (kbd "C-w") (kbd "C-w") [return])
+      "on[e]")))
+
+(ert-deftest evil-test-visual-X ()
+  "Test `X' in visual state."
+  :tags '(evil)
+  (evil-test-buffer
+    "This is line one\nThis is lin[e] two\nThis is line three"
+    ("v$oX")
+    "This is line one\nThis is lin[e] three"))
 
 (ert-deftest evil-test-delete-back-to-indentation ()
   "Test `evil-delete-back-to-indentation' in insert & replace states."
@@ -2233,7 +2395,7 @@ for this test."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("c3sABC" [escape])
       "AB[C]This buffer is for notes you don't want to save.
 ABCIf you want to create a file, visit that file with C-x C-f,
@@ -2260,6 +2422,19 @@ ABCthen enter the text in that file's own buffer.")))
      new line
 []
      five")))
+
+(ert-deftest evil-test-change-line ()
+  "Test `evil-change-line'"
+  :tags '(evil operator)
+  (ert-info ("Change line with eof being part of visual selection")
+    (evil-test-buffer
+      "This is line one
+This is lin[e] two
+This is line three"
+      ("v$C")
+      "This is line one
+[]
+This is line three")))
 
 (ert-deftest evil-test-change-word ()
   "Test changing words"
@@ -2348,7 +2523,12 @@ ABCthen enter the text in that file's own buffer.")))
       "[l]ine 1\nline 2\nline 3\nline 4"
       (":1,3join")
       "line 1 line 2 line 3\nline 4"))
-  )
+  (ert-info ("Join blank line")
+    (evil-test-buffer
+      "(when foo\n[]\n  bar)"
+      (emacs-lisp-mode)
+      ("J")
+      "(when foo\n  [b]ar)")))
 
 (ert-deftest evil-test-substitute ()
   "Test `evil-substitute'"
@@ -2426,6 +2606,47 @@ Below some empty line")))
         ("a" "somemore" "0\C-d")
         "line1\nsometext somemore[]"))))
 
+(ert-deftest evil-test-operator-set-marks ()
+  "Test `[ and `] are set by operators."
+  :tags '(evil operator)
+  (ert-info ("Can go to end of last operated text")
+    (evil-test-buffer
+      "alpha br[a]vo charlie"
+      ("gUiw")
+      "alpha [B]RAVO charlie"
+      ("`]")
+      "alpha BRAV[O] charlie"))
+  (ert-info ("Can go to end of last operated text")
+    (evil-test-buffer
+      "alpha br[a]vo charlie"
+      ("g?iw$")
+      "alpha oenib charli[e]"
+      ("`[")
+      "alpha [o]enib charlie"))
+  (ert-info ("Marks are correct after deletion")
+    (evil-test-buffer
+      "alpha br[a]vo charlie"
+      ("daw^")
+      "[a]lpha charlie"
+      ("`]")
+      "alpha [c]harlie"
+      ("^`[")
+      "alpha [c]harlie")
+    (evil-test-buffer
+      "alpha br[a]vo charlie"
+      ("D^")
+      "[a]lpha br"
+      ("`]")
+      "alpha b[r]"
+      ("^`[")
+      "alpha b[r]")))
+
+(ert-deftest evil-test-operator-save-state-for-motion ()
+  "Test that `evil-operator-range' restores state after executing motion."
+  (evil-test-buffer "abc"
+    ("dfbix" [escape])
+    "xc"))
+
 ;;; Paste
 
 (ert-deftest evil-test-paste-before ()
@@ -2500,7 +2721,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("3ysP")
       "[;]; ;; This buffer is for notes you don't want to save.
 ;; ;; If you want to create a file, visit that file with C-x C-f,
@@ -2510,7 +2731,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("3ys2P")
       "[;]; ;; ;; This buffer is for notes you don't want to save.
 ;; ;; ;; If you want to create a file, visit that file with C-x C-f,
@@ -2520,7 +2741,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; Above some line
 
 ;; Below some empty line"
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("3ys2P")
       "[;]; ;; ;; Above some line
       \n\
@@ -2530,7 +2751,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("3ysj")
       ";; This buffer is for notes you don't want to save.
 \[;]; If you want to create a file, visit that file with C-x C-f,
@@ -2545,7 +2766,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("3ys$")
       ";; This buffer is for notes you don't want to save[.]
 ;; If you want to create a file, visit that file with C-x C-f,
@@ -2553,7 +2774,17 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       ("p")
       ";; This buffer is for notes you don't want to save.[;];
 ;; If you want to create a file, visit that file wi;; th C-x C-f,
-;; then enter the text in that file's own buffer.  ;;")))
+;; then enter the text in that file's own buffer.  ;;"))
+  (ert-info ("Don't mutate register when stripping test props")
+    (let (indent-tabs-mode)
+      (evil-test-buffer
+        "[a]aaaaaaaaaaaa
+bbbbbbbb
+cccc"
+        ("\C-vG$yA       " "\C-r\"" [escape] "up")
+        "aaaaaaaaaaaaa[a]aaaaaaaaaaaa
+bbbbbbbb     bbbbbbbb
+cccc         cccc"))))
 
 (ert-deftest evil-test-paste-after ()
   "Test `evil-paste-after'"
@@ -2627,7 +2858,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("3ysp")
       ";[;]; ; This buffer is for notes you don't want to save.
 ;;; ; If you want to create a file, visit that file with C-x C-f,
@@ -2637,7 +2868,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("3ys2p")
       ";[;]; ;; ; This buffer is for notes you don't want to save.
 ;;; ;; ; If you want to create a file, visit that file with C-x C-f,
@@ -2647,7 +2878,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; Above some line
 
 ;; Below some empty line"
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("3ys2p")
       ";;; ;; ; Above some line
 
@@ -2657,7 +2888,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("3ysj")
       ";; This buffer is for notes you don't want to save.
 \[;]; If you want to create a file, visit that file with C-x C-f,
@@ -2672,7 +2903,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("3ys$")
       ";; This buffer is for notes you don't want to save[.]
 ;; If you want to create a file, visit that file with C-x C-f,
@@ -2702,7 +2933,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y2e2yyy3sj")
       ";; This buffer is for notes you don't want to save.
 \[;]; If you want to create a file, visit that file with C-x C-f,
@@ -2717,7 +2948,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y2e2yyy3sjP\C-p")
       ";; This buffer is for notes you don't want to save.
 \[;]; This buffer is for notes you don't want to save.
@@ -2729,7 +2960,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y2e2yyy3sjP\C-p\C-p")
       ";; This buffer is for notes you don't want to save.
 ;; Thi[s];; If you want to create a file, visit that file with C-x C-f,
@@ -2739,7 +2970,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y2e2yyy3sjP2\C-p")
       ";; This buffer is for notes you don't want to save.
 ;; Thi[s];; If you want to create a file, visit that file with C-x C-f,
@@ -2749,7 +2980,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y2e2yyy3sjP2\C-p\C-n")
       ";; This buffer is for notes you don't want to save.
 \[;]; This buffer is for notes you don't want to save.
@@ -2761,7 +2992,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y2e2yyy3sjP\C-p\C-p2\C-n")
       ";; This buffer is for notes you don't want to save.
 \[;]; ;; If you want to create a file, visit that file with C-x C-f,
@@ -2776,7 +3007,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y2e2yyy3sj")
       ";; This buffer is for notes you don't want to save.
 \[;]; If you want to create a file, visit that file with C-x C-f,
@@ -2791,7 +3022,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y2e2yyy3sjp\C-p")
       ";; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
@@ -2803,7 +3034,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y2e2yyy3sjp\C-p\C-p")
       ";; This buffer is for notes you don't want to save.
 ;;; Thi[s]; If you want to create a file, visit that file with C-x C-f,
@@ -2813,7 +3044,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y2e2yyy3sjp2\C-p")
       ";; This buffer is for notes you don't want to save.
 ;;; Thi[s]; If you want to create a file, visit that file with C-x C-f,
@@ -2823,7 +3054,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y2e2yyy3sjp2\C-p\C-n")
       ";; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
@@ -2835,7 +3066,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
       "[;]; This buffer is for notes you don't want to save.
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y2e2yyy3sjp\C-p\C-p2\C-n")
       ";; This buffer is for notes you don't want to save.
 ;[;]; ; If you want to create a file, visit that file with C-x C-f,
@@ -2851,7 +3082,7 @@ This bufferThis bufferThis buffe[r];; and for Lisp evaluation."))
 ;; If you want to create a file, visit that file with C-x C-f,
 ;; then enter the text in that file's own buffer."
       (setq buffer-undo-list t)
-      (define-key evil-operator-state-local-map "s" 'evil-test-square-motion)
+      (define-key evil-operator-state-local-map "s" #'evil-test-square-motion)
       ("y2e2yyy3sjP\C-p\C-p2\C-n")
       ";; This buffer is for notes you don't want to save.
 \[;]; ;; If you want to create a file, visit that file with C-x C-f,
@@ -2917,7 +3148,22 @@ word3[]"))
     (evil-test-buffer
      "foo"
      ("viw" "\"=p(* 6 7)" [return])
-     "4[2]")))
+     "4[2]"))
+  (ert-info ("Blockwise visual paste (of charwise text) with count")
+    (evil-test-buffer
+      "[a]bc\n123\n123\n123"
+      ("ye" "jl" "\C-vG" "2p")
+      "abc\n1[a]bcabc3\n1abcabc3\n1abcabc3"
+      ("gv") ;; Test point & mark are stored correctly
+      "abc\n1<abcabc3\n1abcabc3\n1abcab[c]>3"))
+  (ert-info ("Blockwise visual paste of linewise text")
+    (evil-test-buffer "[a]bc\n123\n123"
+      ("yy" "jl" "\C-vj" "p")
+      "abc\n13\n13\nabc"))
+  (ert-info ("Blockwise visual paste of blockwise text")
+    (evil-test-buffer "xy\n[z]\n123\n123"
+      ("\C-vkly2jl\C-vjp")
+      "xy\nz\n1xy3\n1z 3")))
 
 (ert-deftest evil-test-visual-paste-pop ()
   "Test `evil-paste-pop' after visual paste."
@@ -2949,7 +3195,7 @@ word3[]"))
       ("yiwyywyiw^j")
       "word1a word1b word1c\n[w]ord2a word2b\nword3a word3b word3c word3d\n"
       ("Vp")
-      "word1a word1b word1c\nword1[b]word3a word3b word3c word3d\n"))
+      "word1a word1b word1c\nword1[b]\nword3a word3b word3c word3d\n"))
   (ert-info ("Visual-line paste, char paste, line pop")
     (evil-test-buffer
       "[w]ord1a word1b word1c\nword2a word2b\nword3a word3b word3c word3d\n"
@@ -2963,7 +3209,7 @@ word3[]"))
       ("yiwyywyiw^j")
       "word1a word1b word1c\n[w]ord2a word2b\nword3a word3b word3c word3d\n"
       ("Vp\C-p\C-p")
-      "word1a word1b word1c\nword1[a]word3a word3b word3c word3d\n")))
+      "word1a word1b word1c\nword1[a]\nword3a word3b word3c word3d\n")))
 
 (ert-deftest evil-test-register ()
   "Test yanking and pasting to and from register."
@@ -3018,7 +3264,17 @@ word3[]"))
       ("yiw" "w" "R" "\C-r0")
       "alpha alpha[ ]charlie"
       ([backspace] [backspace] [backspace])
-      "alpha al[a]vo charlie")))
+      "alpha al[a]vo charlie"))
+  (ert-info ("Normal delete after visual delete doesn't clobber register")
+    (evil-test-buffer
+      "[a]lpha bravo charlie delta"
+      ("vf \"xd" "dw" ";\"xp")
+      "charlie alpha delta"))
+  (ert-info ("Choosing register keeps eol anchoring")
+    (evil-test-buffer
+      "[a]aaaaa\nbbbbb\ncccc"
+      ("\C-v" "2j" "$" "\"xy" "G" "o" [escape] "\"xp")
+      "aaaaaa\nbbbbb\ncccc\n[a]aaaaa\nbbbbb\ncccc")))
 
 (ert-deftest evil-test-last-insert-register ()
   "Test last insertion register."
@@ -3057,6 +3313,26 @@ word3[]"))
      "[5]0/10 * 100 = "
      ("\"nyt=" "A\C-r=" "\C-rn" [return])
      "50/10 * 100 = 500")))
+
+(ert-deftest evil-test-gp-gP ()
+  (ert-info ("gp and gP are just like p and P but move the cursor forward")
+    (evil-test-buffer
+      "[a]lpha bravo charlie"
+      ("ye" "2f " "gp")
+      "alpha bravo alpha[c]harlie"
+      ("2F " "gP")
+      "alphaalpha[ ]bravo alphacharlie"
+      ("l" "ve" "gp")
+      "alphaalpha alpha[ ]alphacharlie"))
+  (ert-info ("gp linewise")
+    (evil-test-buffer
+      "[a]lpha line\nbravo line\ncharlie line\ndelta line\necho line"
+      ("2yy" "2j")
+      "alpha line\nbravo line\n[c]harlie line\ndelta line\necho line"
+      ("gp")
+      "alpha line\nbravo line\ncharlie line\nalpha line\nbravo line\n[d]elta line\necho line"
+      (".")
+      "alpha line\nbravo line\ncharlie line\nalpha line\nbravo line\ndelta line\nalpha line\nbravo line\necho line")))
 
 (ert-deftest evil-test-ex-put ()
   "evil-ex-put inserts text linewise, regardless of yank-handler"
@@ -3138,12 +3414,12 @@ sed do eiusmod tempor incididunt"))
   (ert-info ("End of line")
     (evil-test-buffer
       ";; This buffer is for notes[.]"
-      (should-error (execute-kbd-macro "l"))
-      (should-error (execute-kbd-macro "10l"))))
+      (error end-of-line "l")
+      (error end-of-line "10l")))
   (ert-info ("Until end-of-line")
     (evil-test-buffer
       "[;]; This buffer is for notes."
-      ("100l")
+      (error end-of-line "100l")
       ";; This buffer is for notes[.]"))
   (ert-info ("On empty line")
     (evil-test-buffer
@@ -3174,7 +3450,7 @@ Below some empty line"
   (ert-info ("Until beginning-of-line")
     (evil-test-buffer
       ";; This[ ]buffer is for notes."
-      ("100h")
+      (error beginning-of-line "100h")
       "[;]; This buffer is for notes."))
   (ert-info ("On empty line")
     (evil-test-buffer
@@ -3277,6 +3553,27 @@ Below some empty line"
       ("jjjkk")
       "abc\nab[c]def\n\nabcd\n")))
 
+(ert-deftest evil-test-logical-visual-next-line ()
+  "Test alternating between logical and visual next/previous line motions."
+  :tags '(evil motion)
+  (skip-unless (and (not noninteractive) (> (window-width) 2)))
+  (evil-test-buffer "[x]\nyy\n"
+    (insert (make-string (window-width) ?x)) ; Make first line soft-wrap
+    (goto-char (point-min))
+    ("gjj")
+    (should (= (current-column) 1))
+    ("Gkgk")
+    (should-not (bolp))))
+
+(ert-deftest evil-test-eol-anchoring-with-visual-line-movement ()
+  "Test gj and gk once the cursor is anchored at eol with $."
+  :tags '(evil motion)
+  (skip-unless (and (not noninteractive) (> (window-width) 13)))
+  (evil-test-buffer
+    "Short [l]ine\nA longer line\nThird line"
+    ("$gj")
+    "Short line\nA longer lin[e]\nThird line"))
+
 (ert-deftest evil-test-other-commands-preserve-column ()
   "Test other comamnds preserve the column, when appropriate."
   :tags '(evil motion)
@@ -3349,7 +3646,17 @@ Below some empty line"
       ("d$")
       "Above some line
 \[]
-Below some empty line")))
+Below some empty line"))
+  (ert-info ("Visual state")
+    (evil-test-buffer
+      "f[o]o\nbar"
+      ("v$")
+      "f<oo\n>bar")
+    (let ((evil-v$-excludes-newline t))
+      (evil-test-buffer
+        "f[o]o\nbar"
+        ("v$")
+        "f<oo>\nbar"))))
 
 (ert-deftest evil-test-percentage-of-line ()
   "Test `evil-percentage-of-line' motion"
@@ -3525,7 +3832,9 @@ Below some empty line")))
    ("go")
    "[W]e only need a short buffer for this test"
    (evil-goto-char 24)
-   "We only need a short bu[f]fer for this test"))
+   "We only need a short bu[f]fer for this test"
+   ("v29go")
+   "We only need a short bu<ffer [f]>or this test"))
 
 (ert-deftest evil-test-operator-0 ()
   "Test motion \"0\" with an operator."
@@ -5695,6 +6004,110 @@ This buffer is for notes."
       ("2])")
       "foo ( { ( bar ) baz } [)]")))
 
+(ert-deftest evil-test-paren-jump-from-string ()
+  "Test jump to next/prev paren from a string"
+  :tags '(evil motion)
+  (evil-test-buffer
+   "{
+  fun(a, \"T[]est\", test());
+}
+"
+   ("[(")
+   "{
+  fun[(]a, \"Test\", test());
+}
+"
+   ("])")
+   "{
+  fun(a, \"Test\", test()[)];
+}
+")
+  (evil-test-buffer
+   "{
+  fun(a, \"T[]est\", test());
+}
+"
+   ("])")
+   "{
+  fun(a, \"Test\", test()[)];
+}
+"
+   ("[(")
+   "{
+  fun[(]a, \"Test\", test());
+}
+")
+  (evil-test-buffer
+   "{
+  fun(a, \"T[]est\", test());
+}
+"
+   ("[{")
+   "[{]
+  fun(a, \"Test\", test());
+}
+")
+  (evil-test-buffer
+   "{
+  fun(a, \"T[]est\", test());
+}
+"
+   ("]}")
+   "{
+  fun(a, \"Test\", test());
+[}]
+"))
+
+(ert-deftest evil-test-paren-jump-inside-string-from-string ()
+  "Test jump to next/prev paren inside string from a string"
+  :tags '(evil motion)
+  (evil-test-buffer
+   "{ (\"Test with paren (inside multi (l[e]vel))\", test()); } "
+   ("[(")
+   "{ (\"Test with paren (inside multi [(]level))\", test()); } "
+   ("[(")
+   "{ (\"Test with paren [(]inside multi (level))\", test()); } ")
+  (evil-test-buffer
+   "{ (\"Test with paren (inside multi (l[e]vel))\", test()); } "
+   ("])")
+   "{ (\"Test with paren (inside multi (level[)])\", test()); } "
+   ("])")
+   "{ (\"Test with paren (inside multi (level)[)]\", test()); } ")
+  (evil-test-buffer
+   "{ (\"Test with paren {inside multi {l[e]vel}}\", test()); } "
+   ("[{")
+   "{ (\"Test with paren {inside multi [{]level}}\", test()); } "
+   ("[{")
+   "{ (\"Test with paren [{]inside multi {level}}\", test()); } ")
+  (evil-test-buffer
+   "{ (\"Test with paren {inside multi {l[e]vel}}\", test()); } "
+   ("]}")
+   "{ (\"Test with paren {inside multi {level[}]}\", test()); } "
+   ("]}")
+   "{ (\"Test with paren {inside multi {level}[}]\", test()); } "))
+
+(ert-deftest evil-test-insert-resume ()
+  "Test `evil-insert-resume'"
+  :tags '(evil motion)
+  (ert-info ("Can move to last insert location and take a count")
+    (evil-test-buffer
+      "alpha bravo [ ]delta echo"
+      ("i" "charlie" [escape] "^")
+      "[a]lpha bravo charlie delta echo"
+      ("2gi" " zulu" [escape])
+      "alpha bravo charlie zulu zul[u] delta echo"))
+  (ert-info ("Can move to `^' marker in visual line state")
+    (evil-test-buffer
+      "alpha [b]ravo\ncharlie delta\necho foxtrot"
+      ("i" [escape] "/foxtrot" [return])
+      "alpha bravo\ncharlie delta\necho [f]oxtrot"
+      ("Vk")
+      "alpha bravo\ncharl[i]e delta\necho foxtrot"
+      ("gi")
+      "alpha [b]ravo\ncharlie delta\necho foxtrot"
+      ("vd")
+      "alpha [o]xtrot")))
+
 (ert-deftest evil-test-next-mark ()
   "Test `evil-next-mark', `evil-previous-mark'"
   :tags '(evil motion)
@@ -5764,10 +6177,23 @@ Line 2"))
      (error user-error "`i")
      "One line is enough if we use backtick to [n]avigate")))
 
+(ert-deftest evil-automatic-marks-test ()
+  "Test that certain commands automatically set mark(er)s"
+  :tags '(evil)
+  (ert-info ("Visual selection sets angle-bracket marks")
+    (evil-test-buffer
+      "alpha br[a]vo charlie"
+      ("viw" [escape] "$")
+      "alpha bravo charli[e]"
+      ("`>")
+      "alpha brav[o] charlie"
+      ("`<")
+      "alpha [b]ravo charlie")))
+
 (ert-deftest evil-test-flyspell-motions ()
   "Test flyspell motions"
   :tags '(evil motion)
-  (skip-unless (executable-find "aspell"))
+  (skip-unless (condition-case _ (progn (ispell-check-version) t) (error)))
   (ert-info ("Simple")
     (evil-test-buffer
       "[I] cannt tpye for lyfe"
@@ -5784,7 +6210,17 @@ Line 2"))
       ("[s")
       "I cannt tpye for [l]yfe"
       ("[s")
-      "I cannt [t]pye for lyfe"))
+      "I cannt [t]pye for lyfe")
+    (evil-test-buffer
+      "[o]en otw thre"
+      (flyspell-mode)
+      (flyspell-buffer)
+      ("]s")
+      "oen [o]tw thre"
+      ("]s")
+      "oen otw [t]hre"
+      ("]s")
+      "[o]en otw thre"))
   (ert-info ("With count")
     (evil-test-buffer
       "[I] cannt tpye for lyfe"
@@ -5810,8 +6246,7 @@ Line 2"))
         "I cannt [t]pye for lyfe"
         ("]s")
         "I cannt tpye for [l]yfe"
-        ("]s")
-        "I cannt tpye for [l]yfe")))
+        (error search-failed "]s"))))
   (ert-info ("One mistake")
     (evil-test-buffer
       "[I]'m almst there..."
@@ -5826,17 +6261,15 @@ Line 2"))
       "[I]'ve learned to type!"
       (flyspell-mode)
       (flyspell-buffer)
-      ("]s")
-      "[I]'ve learned to type!"
-      ("[s")
-      "[I]'ve learned to type!")))
+      (error search-failed "]s")
+      (error search-failed "[s"))))
 
 ;;; Text objects
 
 (ert-deftest evil-test-text-object ()
   "Test `evil-define-text-object'"
   :tags '(evil text-object)
-  (let ((object (evil-define-text-object nil (count &optional beg end type)
+  (let ((object (evil-define-text-object nil (count &optional beg end _type)
                   (let ((sel (and beg end (evil-range beg end))))
                     (when (and sel (> count 0)) (forward-char 1))
                     (let ((range (if (< count 0)
@@ -5915,7 +6348,51 @@ Line 2"))
     (evil-test-buffer
       "([a])"
       ("viw")
-      "(<[a]>)")))
+      "(<[a]>)"))
+  (ert-info ("Deleting whitespace is confined to the line")
+    (evil-test-buffer
+      "foo\n  [ ]  bar"
+      ("diw")
+      "foo\n[b]ar")
+    (evil-test-buffer
+      "foo\n  [ ]  bar"
+      ("diW")
+      "foo\n[b]ar")
+    (evil-test-buffer
+      "fo[o]\nbar"
+      ("diW")
+      "[\n]bar")
+    (evil-test-buffer
+      "foo\n  [ ]  bar"
+      ("daw")
+      "foo\n[]")
+    (evil-test-buffer
+      "foo\n  [ ]  bar"
+      ("daW")
+      "foo\n[]"))
+  (ert-info ("Deleting the only word on a line doesn't delete indentation")
+    (evil-test-buffer
+     "   [b]ar"
+     ("daw")
+     "  [ ]")
+    (evil-test-buffer
+      "   [b]ar"
+      ("daW")
+      "  [ ]")
+    (ert-info ("But deleting the final word of many behaves as normal")
+      (evil-test-buffer
+        "   foo   [b]ar"
+        ("daw")
+        "   fo[o]")))
+  (ert-info ("Deleting whitespace on whitepsace only line")
+    (evil-test-buffer
+      "foo\n[ ]\nbar"
+      ("diw")
+      "foo\n[]\nbar")
+    (evil-test-buffer
+      "foo\n[ ]\nbar"
+      ("daw")
+      "foo\n[]\nbar")))
 
 (ert-deftest evil-test-word-objects-cjk ()
   "Test `evil-inner-word' and `evil-a-word' on CJK words"
@@ -6934,7 +7411,14 @@ test hello <a href=\"/deed.zh\">Creative Commons</a>
       :visual-end "»"
       "<button foo=\"bar\" onClick={() => fnbody()}>inner [t]ext</button>"
       ("vit")
-      "<button foo=\"bar\" onClick={() => fnbody()}>«inner tex[t]»</button>")))
+      "<button foo=\"bar\" onClick={() => fnbody()}>«inner tex[t]»</button>"))
+  (ert-info ("Inner tag is selected, even when empty")
+    (evil-test-buffer
+      :visual-start "«"
+      :visual-end "»"
+      "<p>foo<b [c]lass =\"bold\"></b>qux</p>"
+      ("cit" "bar")
+      "<p>foo<b class =\"bold\">bar</b>qux</p>")))
 
 ;;; Visual state
 
@@ -6975,6 +7459,15 @@ test hello <a href=\"/deed.zh\">Creative Commons</a>
       (should (= evil-visual-beginning 4))
       (should (= evil-visual-end 4)))))
 
+(ert-deftest evil-test-non-transient-visual-selection ()
+  "Ensure visual charwise selection can be made when transient mark mode is nil."
+  :tags '(evil visual)
+  (evil-test-buffer
+    "Alpha [b]ravo charlie"
+    (setq-local transient-mark-mode nil)
+    ("ve")
+    "Alpha <brav[o]> charlie"))
+
 (ert-deftest evil-test-visual-exchange ()
   "Test `exchange-point-and-mark' in Visual character selection"
   :tags '(evil visual)
@@ -7006,24 +7499,7 @@ test hello <a href=\"/deed.zh\">Creative Commons</a>
 ;; and for Lisp evaluation."
     ("vV")
     "<;; [ ]buffer is for notes you don't want to save,\n>\
-;; and for Lisp evaluation.")
-  (ert-info ("Test `evil-want-visual-char-semi-exclusive")
-    (let ((evil-want-visual-char-semi-exclusive t))
-      (evil-test-buffer
-        "[;]; This buffer is for notes you don't want to save,
-;; and for Lisp evaluation.
-;; And a third line."
-        ("v")
-        "<[;]>; This buffer is for notes you don't want to save,
-;; and for Lisp evaluation.
-;; And a third line."
-        ("$")
-        "<;; This buffer is for notes you don't want to save,>[
-];; and for Lisp evaluation.
-;; And a third line."
-        ("^jj")
-        "<;; This buffer is for notes you don't want to save,
-;; and for Lisp evaluation.\n>[;]; And a third line."))))
+;; and for Lisp evaluation."))
 
 (ert-deftest evil-test-visual-line ()
   "Test Visual line selection"
@@ -7089,17 +7565,37 @@ Tiny ln"
      "Short 
 A much
 A me[d]
-Tiny ")))
+Tiny "))
+  (ert-info ("Visual block does not extend up to curswant unless tracking EOL")
+    (evil-test-buffer
+     "[a]bc
+"
+     ("\C-vfcjd")
+     "[b]c
+"))
+  (ert-info ("Pasting visual block")
+    (evil-test-buffer
+      "alpha [b]ravo charlie
+delta echo foxtrot
+golf hotel india
+juliet kilo mike"
+      ("\C-v" "jje" "y" "$" "p")
+      "alpha bravo charlie[b]rav
+delta echo foxtrot echo
+golf hotel india   otel
+juliet kilo mike"
+      ("G" "o" [escape] "p")
+      "alpha bravo charliebrav
+delta echo foxtrot echo
+golf hotel india   otel
+juliet kilo mike
+[b]rav
+echo
+otel")))
 
 (ert-deftest evil-test-visual-restore ()
   "Test restoring a previous selection"
   :tags '(evil visual)
-  (ert-info ("Start a characterwise selection \
-if no previous selection")
-    (evil-test-buffer
-      ";; [T]his buffer is for notes."
-      ("gv")
-      ";; <[T]>his buffer is for notes."))
   (ert-info ("Restore characterwise selection")
     (evil-test-buffer
       ";; <[T]his> buffer is for notes."
@@ -7133,7 +7629,95 @@ if no previous selection")
 echo foxtrot\ngolf hotel"
       ("2yy" "++" "Vp" "gv")
       "alpha bravo\ncharlie delta
-<alpha bravo\ncharlie delta\n>golf hotel")))
+<alpha bravo\ncharlie delta\n>golf hotel"))
+  ;; 4 repetitions appears necessary, from manual testing
+  (ert-info ("Restore previous linewise selection from linewise selection")
+    (evil-test-buffer
+      "alpha bravo\nch[a]rlie delta\necho foxtrot\ngolf hotel"
+      ("V" [escape] "jV")
+      "alpha bravo\ncharlie delta\n<ec[h]o foxtrot\n>golf hotel"
+      ("gv")
+      "alpha bravo\n<ch[a]rlie delta\n>echo foxtrot\ngolf hotel"
+      ("gv")
+      "alpha bravo\ncharlie delta\n<ec[h]o foxtrot\n>golf hotel"
+      ("gv")
+      "alpha bravo\n<ch[a]rlie delta\n>echo foxtrot\ngolf hotel"
+      ("gv")
+      "alpha bravo\ncharlie delta\n<ec[h]o foxtrot\n>golf hotel"))
+  (ert-info ("Restore between previous charwise selection and linewise selection")
+    (evil-test-buffer
+      "alpha bravo\nch[a]rlie delta\necho foxtrot\ngolf hotel"
+      ("viw" [escape] "jV")
+      "alpha bravo\ncharlie delta\n<echo f[o]xtrot\n>golf hotel"
+      ("gv")
+      "alpha bravo\n<charli[e]> delta\necho foxtrot\ngolf hotel"
+      ("gv")
+      "alpha bravo\ncharlie delta\n<echo f[o]xtrot\n>golf hotel"
+      ("gv")
+      "alpha bravo\n<charli[e]> delta\necho foxtrot\ngolf hotel"
+      ("gv")
+      "alpha bravo\ncharlie delta\n<echo f[o]xtrot\n>golf hotel")))
+
+(ert-deftest evil-test-visual-redefine ()
+  "Test redefining a previous selection"
+  :tags '(evil visual)
+  (ert-info ("Redefine characterwise selection")
+    (evil-test-buffer
+      ";; <[T]his> buffer is for notes."
+      ([escape] "gv")
+      ";; <[T]his> buffer is for notes."
+      ([escape] "2lm<2wm>gv")
+      ";; Th<is buffer [i]>s for notes."))
+  (ert-info ("Redefine linewise selection")
+    (evil-test-buffer
+      :visual line
+      "<[a]lpha bravo
+>charlie delta
+echo foxtrot
+golf hotel"
+      ([escape] "gv")
+      "<[a]lpha bravo
+>charlie delta
+echo foxtrot
+golf hotel"
+      ([escape] "2jm>gv")
+      "<alpha bravo
+charlie delta
+[e]cho foxtrot
+>golf hotel"
+      ([escape] "km<gv")
+      "alpha bravo
+<charlie delta
+[e]cho foxtrot
+>golf hotel"))
+  (ert-info ("Redefine blockwise selection")
+    (evil-test-buffer
+      :visual block
+      "<alpha bravo
+charli[e]> delta
+echo foxtrot
+golf hotel"
+      ([escape] "gv")
+      "<alpha bravo
+charli[e]> delta
+echo foxtrot
+golf hotel"
+      ([escape] "2jm>gv")
+      "<alpha bravo
+charlie delta
+echo foxtrot
+golf h[o]>tel"
+      ([escape] "k0m<gv")
+      "alpha bravo
+charlie delta
+<echo foxtrot
+golf h[o]>tel")))
+
+(ert-deftest evil-test-visual-separate-from-operator-marks ()
+  "Test that visual selection is kept separate from the '[ and '] marks (#1744)."
+  (evil-test-buffer "x\ny"
+    ("ylvpjxgv")
+    "[x]\n"))
 
 ;;; Replace state
 
@@ -7155,7 +7739,7 @@ echo foxtrot\ngolf hotel"
       ([backspace backspace backspace backspace backspace backspace backspace])
       ";; This buffer is for [n]otes"))
   (ert-info ("Replace from line below and restore")
-    (define-key evil-replace-state-map (kbd "C-e") 'evil-copy-from-below)
+    (define-key evil-replace-state-map (kbd "C-e") #'evil-copy-from-below)
     (evil-test-buffer
       ";; [f]oo bar\n;; qux quux"
       ("R\C-e\C-e\C-e")
@@ -7164,175 +7748,158 @@ echo foxtrot\ngolf hotel"
       ";; [f]oo bar\n;; qux quux")
     (define-key evil-replace-state-map (kbd "C-e") nil))
   (ert-info ("Replace from line above and restore")
-    (define-key evil-replace-state-map (kbd "C-y") 'evil-copy-from-above)
+    (define-key evil-replace-state-map (kbd "C-y") #'evil-copy-from-above)
     (evil-test-buffer
       ";; foo bar\n;; [q]ux quux"
       ("R\C-y\C-y\C-y")
       ";; foo bar\n;; foo[ ]quux"
       ([backspace backspace backspace])
       ";; foo bar\n;; [q]ux quux")
-    (define-key evil-replace-state-map (kbd "C-y") nil)))
+    (define-key evil-replace-state-map (kbd "C-y") nil))
+  (ert-info ("Replace character twice and restore")
+    (evil-test-buffer "[a]"
+      ("Rb" [left] "c" [backspace])
+      "b"))
+  (ert-info ("Can give Replace-state a count repeat it")
+    (evil-test-buffer
+      "a[l]pha bravo"
+      ("3Rx" [escape])
+      "axx[x]a bravo"
+      ("wi\C-a")
+      "axxxa x[]bravo"))
+  (ert-info ("Replace deletion keeps consistent . register")
+    (evil-test-buffer
+      "a[l]pha bravo"
+      ("Rfop" [backspace] "o" [escape])
+      "afo[o]a bravo"
+      ("A \C-@")
+      "afooa bravo fo[o]"))
+  (ert-info ("Replace-state sets ^ mark")
+    (evil-test-buffer
+      "a[l]pha bravo"
+      ("Rxx" [escape] "$")
+      "axxha brav[o]"
+      ("`^")
+      "axx[h]a bravo")))
 
 ;;; Ex
 
 (ert-deftest evil-test-ex-parse ()
   "Test `evil-ex-parse'"
   :tags '(evil ex)
-  (should (equal (evil-ex-parse "5,2cmd arg")
-                 '(evil-ex-call-command
-                   (evil-ex-range
-                    (evil-ex-line (string-to-number "5") nil)
-                    (evil-ex-line (string-to-number "2") nil))
-                   "cmd"
-                   "arg")))
-  (should (equal (evil-ex-parse "5,2cmd !arg")
-                 '(evil-ex-call-command
-                   (evil-ex-range
-                    (evil-ex-line (string-to-number "5") nil)
-                    (evil-ex-line (string-to-number "2") nil))
-                   "cmd"
-                   "!arg")))
-  (should (equal (evil-ex-parse "5,2 arg")
-                 '(evil-ex-call-command
-                   (evil-ex-range
-                    (evil-ex-line (string-to-number "5") nil)
-                    (evil-ex-line (string-to-number "2") nil))
-                   "arg"
-                   nil)))
+  (should (equal (evil-ex-parse "5cmd arg")
+                 '(evil-ex-call-command (string-to-number "5") "cmd" "arg")))
+  (should (equal (evil-ex-parse "5cmd !arg")
+                 '(evil-ex-call-command (string-to-number "5") "cmd" "!arg")))
+  (should (equal (evil-ex-parse "5 arg")
+                 '(evil-ex-call-command (string-to-number "5") "arg" nil)))
   (should (equal (evil-ex-parse "+1,+2t-1")
                  '(evil-ex-call-command
-                   (evil-ex-range
-                    (evil-ex-line
-                     nil
-                     (+ (evil-ex-signed-number
-                         (intern "+")
-                         (string-to-number "1"))))
-                    (evil-ex-line
-                     nil
-                     (+ (evil-ex-signed-number
-                         (intern "+")
-                         (string-to-number "2")))))
+                   (let ((l1 (evil-ex-line
+                              nil
+                              (+ (evil-ex-signed-number
+                                  (intern "+")
+                                  (string-to-number "1"))))))
+                     (save-excursion
+                       (and l1 (string= "," ";") (goto-line l1))
+                       (evil-ex-range
+                        l1 (evil-ex-line
+                            nil
+                            (+ (evil-ex-signed-number
+                                (intern "+")
+                                (string-to-number "2")))))))
                    "t"
                    "-1"))))
 
 (ert-deftest evil-test-ex-parse-ranges ()
   "Test parsing of ranges"
   :tags '(evil ex)
-  (should (equal (evil-ex-parse "%" nil 'range)
-                 '(evil-ex-full-range)))
-  (should (equal (evil-ex-parse "*" nil 'range)
-                 '(evil-ex-last-visual-range)))
-  (should (equal (evil-ex-parse "5,27" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-line (string-to-number "5") nil)
-                   (evil-ex-line (string-to-number "27") nil))))
-  (should (equal (evil-ex-parse "5,$" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-line (string-to-number "5") nil)
-                   (evil-ex-line (evil-ex-last-line) nil))))
-  (should (equal (evil-ex-parse "5,'x" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-line (string-to-number "5") nil)
-                   (evil-ex-line (evil-ex-marker "x") nil))))
-  (should (equal (evil-ex-parse "`x,`y" nil 'range)
-                 '(evil-ex-char-marker-range "x" "y")))
-  (should (equal (evil-ex-parse "`[,`]" nil 'range)
-                 '(evil-ex-char-marker-range "[" "]")))
-  (should (equal (evil-ex-parse "5,+" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-line (string-to-number "5") nil)
-                   (evil-ex-line
-                    nil (+ (evil-ex-signed-number (intern "+") nil))))))
-  (should (equal (evil-ex-parse "5,-" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-line (string-to-number "5") nil)
-                   (evil-ex-line
-                    nil (+ (evil-ex-signed-number (intern "-") nil))))))
-  (should (equal (evil-ex-parse "5,4+2-7-3+10-" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-line (string-to-number "5") nil)
-                   (evil-ex-line
-                    (string-to-number "4")
-                    (+ (evil-ex-signed-number
-                        (intern "+") (string-to-number "2"))
-                       (evil-ex-signed-number
-                        (intern "-") (string-to-number "7"))
-                       (evil-ex-signed-number
-                        (intern "-") (string-to-number "3"))
-                       (evil-ex-signed-number
-                        (intern "+") (string-to-number "10"))
-                       (evil-ex-signed-number (intern "-") nil))))))
-  (should (equal (evil-ex-parse ".-2,4+2-7-3+10-" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-line
-                    (evil-ex-current-line)
-                    (+ (evil-ex-signed-number
-                        (intern "-") (string-to-number "2"))))
-                   (evil-ex-line
-                    (string-to-number "4")
-                    (+ (evil-ex-signed-number
-                        (intern "+") (string-to-number "2"))
-                       (evil-ex-signed-number
-                        (intern "-") (string-to-number "7"))
-                       (evil-ex-signed-number
-                        (intern "-") (string-to-number "3"))
-                       (evil-ex-signed-number
-                        (intern "+") (string-to-number "10"))
-                       (evil-ex-signed-number
-                        (intern "-") nil))))))
-  (should (equal (evil-ex-parse "'a-2,$-10" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-line
-                    (evil-ex-marker "a")
-                    (+ (evil-ex-signed-number
-                        (intern "-") (string-to-number "2"))))
-                   (evil-ex-line
-                    (evil-ex-last-line)
-                    (+ (evil-ex-signed-number
-                        (intern "-") (string-to-number "10")))))))
-  (should (equal (evil-ex-parse "'[,']" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-line
-                    (evil-ex-marker "[")
-                    nil)
-                   (evil-ex-line
-                    (evil-ex-marker "]")
-                    nil))))
-  (should (equal (evil-ex-parse "'{,'}" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-line
-                    (evil-ex-marker "{")
-                    nil)
-                   (evil-ex-line
-                    (evil-ex-marker "}")
-                    nil))))
-  (should (equal (evil-ex-parse "'(,')" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-line
-                    (evil-ex-marker "(")
-                    nil)
-                   (evil-ex-line
-                    (evil-ex-marker ")")
-                    nil))))
-  (should (equal (evil-ex-parse ",']" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-current-line)
-                   (evil-ex-line
-                    (evil-ex-marker "]")
-                    nil))))
-  (should (equal (evil-ex-parse ";']" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-current-line)
-                   (evil-ex-line
-                    (evil-ex-marker "]")
-                    nil))))
-  (should (equal (evil-ex-parse ".+42" nil 'range)
-                 '(evil-ex-range
-                   (evil-ex-line
-                    (evil-ex-current-line)
-                    (+ (evil-ex-signed-number
-                        (intern "+") (string-to-number "42"))))
-                   nil))))
+  (cl-flet
+      ((mk-range
+        (a b &optional relative)
+        `(let ((l1 ,(when a `(evil-ex-line ,@a))))
+           (save-excursion
+             (and l1 (string= ,(if relative ";" ",") ";") (goto-line l1))
+             (evil-ex-range l1 ,(when b `(evil-ex-line ,@b)))))))
+    (should (equal (evil-ex-parse "%" nil 'range)
+                   '(evil-ex-full-range)))
+    (should (equal (evil-ex-parse "*" nil 'range)
+                   '(evil-ex-last-visual-range)))
+    (should (equal (evil-ex-parse "5,27" nil 'range)
+                   (mk-range '((string-to-number "5") nil)
+                             '((string-to-number "27") nil))))
+    (should (equal (evil-ex-parse "5,$" nil 'range)
+                   (mk-range '((string-to-number "5") nil)
+                             '((evil-ex-last-line) nil))))
+    (should (equal (evil-ex-parse "5,'x" nil 'range)
+                   (mk-range '((string-to-number "5") nil)
+                             '((evil-ex-marker "x") nil))))
+    (should (equal (evil-ex-parse "`x,`y" nil 'range)
+                   '(evil-ex-char-marker-range "x" "y")))
+    (should (equal (evil-ex-parse "`[,`]" nil 'range)
+                   '(evil-ex-char-marker-range "[" "]")))
+    (should (equal (evil-ex-parse "5,+" nil 'range)
+                   (mk-range '((string-to-number "5") nil)
+                             '(nil (+ (evil-ex-signed-number (intern "+") nil))))))
+    (should (equal (evil-ex-parse "5,-" nil 'range)
+                   (mk-range '((string-to-number "5") nil)
+                             '(nil (+ (evil-ex-signed-number (intern "-") nil))))))
+    (should (equal (evil-ex-parse "5,4+2-7-3+10-" nil 'range)
+                   (mk-range
+                    '((string-to-number "5") nil)
+                    '((string-to-number "4")
+                      (+ (evil-ex-signed-number
+                          (intern "+") (string-to-number "2"))
+                         (evil-ex-signed-number
+                          (intern "-") (string-to-number "7"))
+                         (evil-ex-signed-number
+                          (intern "-") (string-to-number "3"))
+                         (evil-ex-signed-number
+                          (intern "+") (string-to-number "10"))
+                         (evil-ex-signed-number (intern "-") nil))))))
+    (should (equal (evil-ex-parse ".-2,4+2-7-3+10-" nil 'range)
+                   (mk-range
+                    '((evil-ex-current-line)
+                      (+ (evil-ex-signed-number
+                          (intern "-") (string-to-number "2"))))
+                    '((string-to-number "4")
+                      (+ (evil-ex-signed-number
+                          (intern "+") (string-to-number "2"))
+                         (evil-ex-signed-number
+                          (intern "-") (string-to-number "7"))
+                         (evil-ex-signed-number
+                          (intern "-") (string-to-number "3"))
+                         (evil-ex-signed-number
+                          (intern "+") (string-to-number "10"))
+                         (evil-ex-signed-number
+                          (intern "-") nil))))))
+    (should (equal (evil-ex-parse "'a-2,$-10" nil 'range)
+                   (mk-range
+                    '((evil-ex-marker "a")
+                      (+ (evil-ex-signed-number
+                          (intern "-") (string-to-number "2"))))
+                    '((evil-ex-last-line)
+                      (+ (evil-ex-signed-number
+                          (intern "-") (string-to-number "10")))))))
+    (should (equal (evil-ex-parse "'[,']" nil 'range)
+                   (mk-range '((evil-ex-marker "[") nil)
+                             '((evil-ex-marker "]") nil))))
+    (should (equal (evil-ex-parse "'{,'}" nil 'range)
+                   (mk-range '((evil-ex-marker "{") nil)
+                             '((evil-ex-marker "}") nil))))
+    (should (equal (evil-ex-parse "'(,')" nil 'range)
+                   (mk-range '((evil-ex-marker "(") nil)
+                             '((evil-ex-marker ")") nil))))
+    (should (equal (evil-ex-parse ",']" nil 'range)
+                   (mk-range nil '((evil-ex-marker "]") nil))))
+    (should (equal (evil-ex-parse ";']" nil 'range)
+                   (mk-range nil '((evil-ex-marker "]") nil) t)))
+    (should (equal (evil-ex-parse ".+42" nil 'range)
+                   '(evil-ex-range
+                     (evil-ex-line
+                      (evil-ex-current-line)
+                      (+ (evil-ex-signed-number
+                          (intern "+") (string-to-number "42")))))))))
 
 (ert-deftest evil-test-ex-parse-emacs-commands ()
   "Test parsing of Emacs commands"
@@ -7569,7 +8136,37 @@ echo foxtrot\ngolf hotel"
     (evil-test-buffer
       "[x]xyxxz"
       (":%s/x//g" [return])
-      "[y]z")))
+      "[y]z"))
+  (ert-info ("Substitute doesn't match final empty line")
+    (evil-test-buffer
+      "abc\n[d]ef\n\nghi"
+      (":s/$/4" [return])
+      "abc\n[d]ef4\n\nghi")
+    (evil-test-buffer
+      "abc\n[d]ef\n\nghi"
+      (":s/f\\w*/4" [return])
+      "abc\n[d]e4\n\nghi"))
+  (ert-info ("Substitute doesn't move point if 0 matches")
+    (evil-test-buffer
+      "abc\nd[e]f\nghi"
+      (":%s/nothere/foo" [return])
+      "abc\nd[e]f\nghi"))
+  (ert-info ("Substitute up to EOB works")
+    (evil-test-buffer "[f]oo"
+      (":s/foo")
+      ""))
+  (ert-info ("Substitute with multi-line replacement")
+    (evil-test-buffer "x"
+      (":s/./foo\\nbar")
+      "foo\n[b]ar"))
+  (ert-info ("Use replace count in substitution")
+    (evil-test-buffer "xx"
+      (":s/./\\#/g")
+      "01"))
+  (ert-info ("Substitute with `calc' Lisp expression")
+    (evil-test-buffer "1 + 2"
+      (":s/.*/\\,(calc-eval \\0)")
+      "3")))
 
 (ert-deftest evil-test-ex-repeat-substitute-replacement ()
   "Test `evil-ex-substitute' with repeating of previous substitutions."
@@ -7674,7 +8271,28 @@ echo foxtrot\ngolf hotel"
       (":s/foo/AAA/g" [return])
       "[x]xx AAA bar AAA bar AAA bar\nxxx foo bar foo bar foo bar"
       ("g&")
-      "xxx AAA bar AAA bar AAA bar\n[x]xx AAA bar AAA bar AAA bar")))
+      "xxx AAA bar AAA bar AAA bar\n[x]xx AAA bar AAA bar AAA bar"))
+  (ert-info ("Substitute with last search, maintaining case sensitivty")
+    (evil-select-search-module 'evil-search-module 'evil-search)
+    (evil-test-buffer
+      "[a]lpha\nbravo\nbravo\ncharlie\nBravo\ndelta"
+      ("/\\Cbravo" [return])
+      "alpha\n[b]ravo\nbravo\ncharlie\nBravo\ndelta"
+      (":%s//zulu" [return])
+      "alpha\nzulu\n[z]ulu\ncharlie\nBravo\ndelta"))
+  (ert-info ("Repeat magic multiple times")
+    (let ((evil-magic 'very-magic)
+          (evil-ex-search-vim-style-regexp t))
+      (evil-test-buffer
+        "[b]ravo, alpha\ndelta, charlie\nfoxtrot, echo\nhotel, golf"
+        (":s/(.*), (.*)/\\2 \\1" [return])
+        "alpha bravo\ndelta, charlie\nfoxtrot, echo\nhotel, golf"
+        ("j&")
+        "alpha bravo\ncharlie delta\nfoxtrot, echo\nhotel, golf"
+        ("j&")
+        "alpha bravo\ncharlie delta\necho foxtrot\nhotel, golf"
+        ("j&")
+        "alpha bravo\ncharlie delta\necho foxtrot\ngolf hotel"))))
 
 (ert-deftest evil-test-ex-regex-without-case ()
   "Test `evil-ex-regex-without-case'"
@@ -7769,6 +8387,20 @@ echo foxtrot\ngolf hotel"
         "start\nline 2\nline [3]\n\n"
         ("n")
         "start\nline 2\nline 3\n[]\n"))
+    (ert-info ("Can search for start/end of symbol")
+      (let ((evil-magic 'very-magic))
+        (evil-test-buffer
+          "[a]lpha bravo bra charlie"
+          ("/bra\\_>" [return])
+          "alpha bravo [b]ra charlie")))
+    (ert-info ("Can search for literal < and >")
+      (let ((evil-magic 'very-magic))
+        (evil-test-buffer
+          :visual-start "«"
+          :visual-end "»"
+          "[a]lpha bravo <bravo> charlie"
+          ("/<bravo>" [return])
+          "alpha bravo [<]bravo> charlie")))
     (ert-info ("Can paste from register in ex-search")
       (evil-test-buffer
        "Alpha [b]ravo charlie alpha bravo delta bravo delta"
@@ -7777,7 +8409,32 @@ echo foxtrot\ngolf hotel"
        ("/\C-rb" [return])
        "Alpha bravo charlie alpha [b]ravo delta bravo delta"
        ("w/\C-r\C-o" [return])
-       "Alpha bravo charlie alpha bravo delta bravo [d]elta"))))
+       "Alpha bravo charlie alpha bravo delta bravo [d]elta"))
+    (ert-info ("Can use C-w yank-word functionality")
+      (let ((old-val evil-want-C-w-delete))
+        (custom-set-variables '(evil-want-C-w-delete nil))
+        (evil-test-buffer
+          "alpha [b]ravo charlie delta bravo echo"
+          ("/\C-w" [return])
+          "alpha bravo charlie delta [b]ravo echo")
+        (custom-set-variables `(evil-want-C-w-delete ,old-val))))
+    (ert-info ("Can use backreferences with vim-style regexp")
+      (let ((evil-ex-search-vim-style-regexp t))
+        (evil-test-buffer
+          "[a]bacababcacabccadefghij"
+          ;; Very magic
+          ("/\\v(.)(.)(.)\\3\\1/e" [return])
+          "abacababcacabcc[a]defghij")
+        (evil-test-buffer
+          "[a]bacababcacabccadefghij"
+          ;; Default magic
+          ("/\\(.\\)\\(.\\)\\(.\\)\\3\\1/e" [return])
+          "abacababcacabcc[a]defghij")
+        (evil-test-buffer
+          "[a]bacababcac1abcca1defghij"
+          ;; With literal numbers
+          ("/\\(.\\)\\(.\\)\\(.\\)\\3\\11/e" [return])
+          "abacababcac1abcca[1]defghij")))))
 
 (ert-deftest evil-test-ex-search-offset ()
   "Test search offsets."
@@ -7952,19 +8609,20 @@ maybe we need one line more with some text\n"
       (let ((evil-ex-search-vim-style-regexp t)
             (evil-magic 'very-magic))
         (evil-test-buffer
-          "[a]lpha bravo alpha charlie"
+          "[a]lpha bravo alpha charlie alpha"
           ("*")
-          "alpha bravo [a]lpha charlie")))))
+          "alpha bravo [a]lpha charlie alpha"
+          ("/" [return])
+          "alpha bravo alpha charlie [a]lpha")))))
 
 (ert-deftest evil-test-ex-search-motion ()
+  "Test that Ex forward search, as a motion, can be repeated."
   :tags '(evil ex search)
   (evil-without-display
     (evil-select-search-module 'evil-search-module 'evil-search)
-    (ert-info ("Ex forward search, as a motion, can be repeated")
-      (evil-test-buffer
-        "alpha [b]ravo charlie delta golf hotel charlie india"
-        ("c/charlie" [return] "replacement " [escape] "4w.")
-        "alpha replacement charlie delta golf replacement[ ]charlie india"))))
+    (evil-test-buffer "alpha [b]ravo charlie delta golf hotel charlie india"
+      ("c/charlie" [return] "replacement " [escape] "4w.")
+      "alpha replacement charlie delta golf replacement[ ]charlie india")))
 
 (ert-deftest evil-test-ex-search-next+previous-match ()
   :tags '(evil ex search)
@@ -8141,10 +8799,9 @@ maybe we need one line more with some text\n")
       (evil-with-temp-file name
           "3\n2\n1\n"
         (evil-test-buffer
-          ((vconcat ":e " name [return]))
+          (":e " name [return])
           "[3]\n2\n1\n"
-          ((vconcat ":read !echo %" [return]))
-          ((vconcat ":w " [return]))
+          (":read !echo %" [return] ":w" [return])
           (file name (concat "3\n"
                              (buffer-file-name) "\n"
                              "2\n"
@@ -8196,6 +8853,15 @@ maybe we need one line more with some text\n")
       ("vj!sort" [return])
       "line 5\n[l]ine 3\nline 4\nline 2\nline 1\n")))
 
+(defmacro evil-with-both-search-modules (&rest body)
+  `(mapc (lambda (search-module)
+           (setq evil-search-forward-history nil
+                 evil-search-backward-history nil
+                 evil-ex-search-history nil)
+           (evil-select-search-module 'evil-search-module search-module)
+           ,@body)
+         '(isearch evil-search)))
+
 (ert-deftest evil-test-global ()
   "Test `evil-ex-global'."
   :tags '(evil ex global)
@@ -8204,6 +8870,23 @@ maybe we need one line more with some text\n")
       "[n]o 1\nno 2\nno 3\nyes 4\nno 5\nno 6\nno 7\n"
       (":g/yes/d" [return])
       "no 1\nno 2\nno 3\n[n]o 5\nno 6\nno 7\n"))
+  (ert-info ("global delete, specifying case sensitivty")
+    (evil-test-buffer
+      "[a]lpha bravo charlie\nalpha Bravo charlie\nalpha BRAVO charlie\nalpha delta charlie"
+      (":g/\\CBravo/d" [return])
+      "alpha bravo charlie\n[a]lpha BRAVO charlie\nalpha delta charlie"
+      (":g/\\cBravo/d" [return])
+      "alpha delta charlie"))
+  (ert-info ("global delete with arg")
+    (evil-test-buffer
+      "[n]o 1\nno 2\nno 3\nyes 4\nno 5\nno 6\nno 7\n"
+      (":g/yes/d2" [return])
+      "no 1\nno 2\nno 3\n[n]o 6\nno 7\n"))
+  (ert-info ("global delete with range")
+    (evil-test-buffer
+      "alpha\nbravo\ncharlie\ndelta\ncharlie\necho\ngolf\ncharlie\nhotel"
+      (":g/charlie/-1d")
+      "alpha\ncharlie\ncharlie\necho\ncharlie\nhotel"))
   (ert-info ("global substitute")
     (evil-test-buffer
       "[n]o 1\nno 2\nno 3\nyes 4\nno 5\nno 6\nno 7\n"
@@ -8258,7 +8941,13 @@ maybe we need one line more with some text\n")
        (evil-test-buffer
          "this\nThis\n"
          (":g/This/d" [return])
-         "this\n")))))
+         "this\n"))))
+  (ert-info (":global should transform vim-style regexp when appropriate")
+    (let ((evil-ex-search-vim-style-regexp t))
+      (evil-test-buffer
+        "a\n1\nb\n2\nc\n3\n"
+        (":g/\\d/>")
+        "a\n    1\nb\n    2\nc\n    3\n"))))
 
 (ert-deftest evil-test-normal ()
   "Test `evil-ex-normal'."
@@ -8370,7 +9059,22 @@ Source
 Target
 Source
 [O]ther line
-")))
+"))
+  (ert-info ("Move with global (classic line reversal)")
+    (evil-test-buffer
+      "5\n4\n3\n2\n1\n"
+      (":g/^/m0")
+      "1\n2\n3\n4\n5\n")
+    (ert-info ("... and visual selection")
+      (evil-test-buffer
+        "<5\n4\n3\n2\n[1]>\n"
+        (":g/^/m0")
+        "1\n2\n3\n4\n5\n"))
+    (ert-info ("... and no last blank line")
+      (evil-test-buffer
+        "5\n4\n3\n2\n1"
+        (":g/^/m0")
+        "1\n2\n3\n4\n5"))))
 
 (ert-deftest evil-test-write ()
   :tags '(evil ex)
@@ -8416,7 +9120,7 @@ Source
 
 (ert-deftest evil-test-ex-sort ()
   :tags '(evil ex)
-  "Text ex command :sort `evil-ex-sort`."
+  "Text Ex command \":sort\" (`evil-ex-sort')."
   (ert-info ("Plain sort")
     (evil-test-buffer
       "[z]zyy\ntest\ntEst\ntesT\nTEST\ntest\n"
@@ -8441,88 +9145,69 @@ Source
     (evil-test-buffer
       "[z]zyy\ntest\ntEst\ntesT\nTEST\ntest\n"
       (":sort iu")
-      "[t]est\nzzyy\n")))
+      "[t]est\nzzyy\n"))
+  (ert-info ("pattern sort")
+    (evil-test-buffer
+      "[t]e|z|t\nzz|a|y\n"
+      (":sort /|[a-z]|/ r")
+      ("zz|a|y\nte|z|t\n"))
+    (evil-test-buffer
+      "[a],b\nb,a\n"
+      (":sort /[^,]*,/")
+      "b,a\na,b\n")
+    (evil-test-buffer
+      "[a],b\nb,a\n"
+      ("/," [return] ":sort //")
+      "b,a\na,b\n"))
+  (ert-info ("numeric sort")
+    (ert-info ("decimal")
+      (evil-test-buffer
+        "27\n027\n2\na\n1\n"
+        (":sort n")
+        "a\n1\n2\n27\n027\n"))
+    (ert-info ("octal")
+      (evil-test-buffer
+        "9\n8\n"
+        (":sort o")
+        "9\n8\n")
+      (evil-test-buffer
+        "777\n776\n7239\n"
+        (":sort o")
+        "7239\n776\n777\n"))
+    (ert-info ("hexadecimal")
+      (evil-test-buffer
+        "0xae\n0xb\nae\nad\n"
+        (":sort x")
+        "0xb\nad\n0xae\nae\n"))))
 
 ;;; Command line window
 
 (ert-deftest evil-test-command-window-ex ()
-  "Test command line window for ex commands"
-  (skip-unless (not noninteractive))
-  (let (evil-ex-history)
-    (evil-test-buffer
-      "[f]oo foo foo"
-      (":s/foo/bar" [return])
-      "[b]ar foo foo"
-      (":s/foo/baz" [return])
-      "[b]ar baz foo"
+  "Test command line window for Ex commands."
+  (let ((evil-ex-history (list "s/foo/baz" "s/foo/bar")))
+    (evil-test-buffer "[b]ar baz foo"
       ("q:")
       "s/foo/bar\ns/foo/baz\n[]\n"
       ("kk:s/bar/quz" [return])
       "[s]/foo/quz\ns/foo/baz\n"
-      ("fzrx")
-      "s/foo/qu[x]\ns/foo/baz\n"
-      ([return])
+      ("fzrx" [return])
       "[b]ar baz qux"
-      (should (equal (car evil-ex-history)
-                     "s/foo/qux")))))
-
-(ert-deftest evil-test-command-window-recursive ()
-  "Test that recursive command windows shouldn't be allowed"
-  (skip-unless (not noninteractive))
-  (let ((evil-command-window-height 0))
-    (evil-test-buffer
-      "[f]oo foo foo"
-      (":s/foo/bar" [return])
-      ("q:")
-      (should-error (execute-kbd-macro "q:")))))
+      (should (equal (car evil-ex-history) "s/foo/qux")))))
 
 (ert-deftest evil-test-command-window-noop ()
-  "Test that executing a blank command does nothing"
-  (skip-unless (not noninteractive))
-  (evil-test-buffer
-    "[f]oo foo foo"
+  "Test that executing a blank command does nothing."
+  (evil-test-buffer "[f]oo foo foo"
     ("q:")
     "[]\n"
     ([return])
     "[f]oo foo foo"))
 
-(ert-deftest evil-test-command-window-multiple ()
-  "Test that multiple command line windows can't be visible at the same time"
-  (skip-unless (not noninteractive))
-  (let ((evil-command-window-height 0))
-    (evil-test-buffer
-      "[f]oo foo foo"
-      ("q:")
-      (let ((num-windows (length (window-list))))
-        (select-window (previous-window))
-        (execute-kbd-macro "q:")
-        (should (= (length (window-list)) num-windows))))))
-
-(defmacro evil-with-both-search-modules (&rest body)
-  `(mapc (lambda (search-module)
-           (setq evil-search-forward-history nil
-                 evil-search-backward-history nil
-                 evil-ex-search-history nil)
-           (evil-select-search-module 'evil-search-module search-module)
-           ,@body)
-         '(isearch evil-search)))
-
 (ert-deftest evil-test-command-window-search-history ()
-  "Test command window with forward and backward search history"
-  (skip-unless (not noninteractive))
-  (let ((evil-search-module 'isearch))
-    (evil-test-buffer
-      "[f]oo bar baz qux one two three four"
-      ("/qux" [return])
-      "foo bar baz [q]ux one two three four"
-      ("/three" [return])
-      "foo bar baz qux one two [t]hree four"
-      ("?bar" [return])
-      "foo [b]ar baz qux one two three four"
-      ("/four" [return])
-      "foo bar baz qux one two three [f]our"
-      ("?baz" [return])
-      "foo bar [b]az qux one two three four"
+  "Test command window with forward and backward search history."
+  (let ((evil-search-module 'isearch)
+        (evil-search-forward-history (list "four" "three" "qux"))
+        (evil-search-backward-history (list "baz" "bar")))
+    (evil-test-buffer "foo bar [b]az qux one two three four"
       ("q/")
       "qux\nthree\nfour\n[]\n"
       ("k" [return])
@@ -8533,14 +9218,11 @@ Source
       "bar\nbaz\n[]\n"
       ("k$rr" [return])
       "foo [b]ar baz qux one two three four"
-      (should-error
-       (progn (execute-kbd-macro "q/iNOT THERE")
-              (execute-kbd-macro [return])))
+      (error 'user-error "q/iNOT THERE" [return])
       "foo [b]ar baz qux one two three four")))
 
 (ert-deftest evil-test-command-window-search-word ()
-  "Test command window history when searching for word under cursor"
-  (skip-unless (not noninteractive))
+  "Test command window history when searching for word under cursor."
   (let ((evil-search-module 'isearch))
     (evil-test-buffer
       "[f]oo bar foo bar foo"
@@ -8553,118 +9235,75 @@ Source
       ("q?k" [return])
       "foo [b]ar foo bar foo")))
 
+;;; Window motions
+
+(ert-deftest evil-test-window-next-and-prev-respect-window-parameters ()
+  "Test that `evil-window-next' and `evil-window-prev' respect window parameters.
+E.g. they do not move to windows that have the `no-other-window'
+parameter set."
+  (save-window-excursion
+    ;; Make sure there is a single original window and open a second
+    ;; other window with `no-other-window' set.
+    (delete-other-windows)
+    (let* ((this-window (selected-window))
+           (other-window (split-window)))
+      (set-window-parameter other-window 'no-other-window t)
+      ;; `evil-window-next'/`evil-window-prev' should not switch to
+      ;; the window with `no-other-window' parameter set.
+      (evil-window-next nil)
+      (should (eq (selected-window) this-window))
+      (evil-window-prev nil)
+      (should (eq (selected-window) this-window)))))
+
 ;;; Utilities
 
 (ert-deftest evil-test-parser ()
   "Test `evil-parser'"
-  (let ((grammar '((number "[0-9]+" #'string-to-number)
-                   (plus "\\+" #'intern)
-                   (minus "-" #'intern)
-                   (operator
-                    plus
-                    minus)
-                   (sign
-                    ((\? operator) #'$1))
-                   (signed-number
-                    (sign number))
-                   (inc
-                    (number #'(lambda (n) (1+ n))))
-                   (expr
-                    (number operator number)
-                    ("2" #'"1+1"))
-                   (epsilon nil))))
-    (ert-info ("Nothing")
-      (should (equal (evil-parser "1+2" nil grammar t)
-                     nil))
-      (should (equal (evil-parser "1+2" nil grammar)
-                     '(nil . "1+2")))
-      (should (equal (evil-parser "1+2" 'epsilon grammar t)
-                     nil))
-      (should (equal (evil-parser "1+2" 'epsilon grammar)
-                     '(nil . "1+2"))))
-    (ert-info ("Strings")
-      (should (equal (evil-parser "1" 'number grammar t)
-                     '((string-to-number "1"))))
-      (should (equal (evil-parser "11" 'number grammar)
-                     '((string-to-number "11") . ""))))
-    (ert-info ("Sequences")
-      (should (equal (evil-parser "1" '(number) grammar t)
-                     '((list (string-to-number "1")))))
-      (should (equal (evil-parser "1+2" '(number operator number) grammar t)
-                     '((list
-                        (string-to-number "1")
-                        (intern "+")
-                        (string-to-number "2"))))))
-    (ert-info ("Symbols")
-      (should (equal (evil-parser "+" 'plus grammar t)
-                     '((intern "+"))))
-      (should (equal (evil-parser "+" 'operator grammar t)
-                     '((intern "+"))))
-      (should (equal (evil-parser "1" 'number grammar t)
-                     '((string-to-number "1")))))
-    (ert-info ("Whitespace")
-      (should (equal (evil-parser " 1" 'number grammar t)
-                     '((string-to-number "1")))))
-    (ert-info ("One or more")
-      (should (equal (evil-parser "1 2 3" '(+ number) grammar t)
-                     '((list
-                        (string-to-number "1")
-                        (string-to-number "2")
-                        (string-to-number "3")))))
-      (should (equal (evil-parser "1 2 3" '(* number) grammar t)
-                     '((list
-                        (string-to-number "1")
-                        (string-to-number "2")
-                        (string-to-number "3")))))
-      (should (equal (evil-parser "1 2 3" '(\? number) grammar)
-                     '((string-to-number "1") . " 2 3")))
-      (should (equal (evil-parser "1 2 3" '(\? number number) grammar)
-                     '((list
-                        (string-to-number "1")
-                        (string-to-number "2"))
-                       . " 3")))
-      (should (equal (evil-parser "1 2 3" '(number (\? number)) grammar)
-                     '((list
-                        (string-to-number "1")
-                        (string-to-number "2"))
-                       . " 3")))
-      (should (equal (evil-parser "1 2 3" '(number (\? number number)) grammar)
-                     '((list
-                        (string-to-number "1")
-                        (list
-                         (string-to-number "2")
-                         (string-to-number "3")))
-                       . "")))
-      (should (equal (evil-parser "1 a 3" '(number (\? number)) grammar)
-                     '((list
-                        (string-to-number "1")
-                        nil)
-                       . " a 3")))
-      (should (equal (evil-parser "1" 'signed-number grammar t t)
-                     '((signed-number (sign "") (number "1")) . ""))))
-    (ert-info ("Lookahead")
-      (should (equal (evil-parser "foobar" '("foo" (& "bar")) grammar)
-                     '((list "foo") . "bar")))
-      (should (equal (evil-parser "foobar" '("foo" (! "bar")) grammar)
-                     nil))
-      (should (equal (evil-parser "foobar" '("foo" (& "baz")) grammar)
-                     nil))
-      (should (equal (evil-parser "foobar" '("foo" (! "baz")) grammar)
-                     '((list "foo") . "bar"))))
-    (ert-info ("Semantic actions")
-      (should (equal (evil-parser "1" 'inc grammar t)
-                     '((funcall (lambda (n)
-                                  (1+ n))
-                                (string-to-number "1")))))
-      (should (equal (evil-parser "1+1" 'expr grammar t)
-                     '((list
-                        (string-to-number "1")
-                        (intern "+")
-                        (string-to-number "1")))))
-      (should (equal (evil-parser "2" 'expr grammar t)
-                     '((list (string-to-number "1")
-                             (intern "+")
-                             (string-to-number "1"))))))))
+  (with-temp-buffer
+    (cl-flet
+        ((parse
+          (s &rest args)
+          (erase-buffer)
+          (insert s)
+          (goto-char (point-min))
+          (apply
+           (evil-parser
+            '((number "[0-9]+" #'string-to-number)
+              (plus "\\+" #'intern)
+              (minus "-" #'intern)
+              (operator
+               plus
+               minus)
+              (sign (\? operator))
+              (signed-number (sign number))
+              (expr
+               ("foo" (& "bar"))
+               ("xxx" (! "yyy"))
+               (number operator number))
+              (epsilon nil))
+            expr operator plus signed-number number epsilon)
+           args)))
+      (ert-info ("Nothing")
+        (should (equal (parse "1+2" 'epsilon) '(nil))))
+      (ert-info ("Symbols")
+        (should (equal (parse "+" 'plus) '((intern "+"))))
+        (should (equal (parse "+" 'operator) '((intern "+")))))
+      (ert-info ("Leading whitespace")
+        (should (equal (parse " 1" 'number) '((string-to-number "1")))))
+      (ert-info ("Syntax tree")
+        (should (equal (parse "1" 'signed-number t)
+                       '((signed-number (sign . 1) (number . 2))))))
+      (ert-info ("Lookahead")
+        (should (equal (parse "foobar" 'expr) '((list "foo"))))
+        (should (null (parse "foobaz" 'expr)))
+        (should (null (parse "xxxyyy" 'expr)))
+        (should (equal (parse "xxxzzz" 'expr) '((list "xxx")))))
+      (ert-info ("Semantic actions")
+        (should (equal (parse "1+1" 'expr)
+                       '((list
+                          (string-to-number "1")
+                          (intern "+")
+                          (string-to-number "1")))))))))
 
 (ert-deftest evil-test-delimited-arguments ()
   "Test `evil-delimited-arguments'"
@@ -8761,32 +9400,33 @@ Source
 (ert-deftest evil-test-properties ()
   "Test `evil-get-property' and `evil-put-property'"
   :tags '(evil util)
-  (let (alist)
+  (defvar evil--alist)
+  (let (evil--alist)
     (ert-info ("Set properties")
-      (evil-put-property 'alist 'wibble :foo t)
-      (should (equal alist '((wibble . (:foo t)))))
-      (evil-put-property 'alist 'wibble :bar nil)
-      (should (equal alist '((wibble . (:foo t :bar nil)))))
-      (evil-put-property 'alist 'wobble :foo nil :bar nil :baz t)
-      (should (equal alist '((wobble . (:foo nil :bar nil :baz t))
+      (evil-put-property 'evil--alist 'wibble :foo t)
+      (should (equal evil--alist '((wibble . (:foo t)))))
+      (evil-put-property 'evil--alist 'wibble :bar nil)
+      (should (equal evil--alist '((wibble . (:foo t :bar nil)))))
+      (evil-put-property 'evil--alist 'wobble :foo nil :bar nil :baz t)
+      (should (equal evil--alist '((wobble . (:foo nil :bar nil :baz t))
                              (wibble . (:foo t :bar nil))))))
     (ert-info ("Get properties")
-      (should (evil-get-property alist 'wibble :foo))
-      (should-not (evil-get-property alist 'wibble :bar))
-      (should-not (evil-get-property alist 'wobble :foo))
-      (should-not (evil-get-property alist 'wibble :baz))
-      (should (equal (evil-get-property alist t :foo)
+      (should (evil-get-property evil--alist 'wibble :foo))
+      (should-not (evil-get-property evil--alist 'wibble :bar))
+      (should-not (evil-get-property evil--alist 'wobble :foo))
+      (should-not (evil-get-property evil--alist 'wibble :baz))
+      (should (equal (evil-get-property evil--alist t :foo)
                      '((wibble . t) (wobble . nil))))
-      (should (equal (evil-get-property alist t :bar)
+      (should (equal (evil-get-property evil--alist t :bar)
                      '((wibble . nil) (wobble . nil))))
-      (should (equal (evil-get-property alist t :baz)
+      (should (equal (evil-get-property evil--alist t :baz)
                      '((wobble . t)))))))
 
 (ert-deftest evil-test-filter-list ()
   "Test `evil-filter-list'"
   :tags '(evil util)
   (ert-info ("Return filtered list")
-    (should (equal (evil-filter-list #'null '(nil)) nil))
+    (should (null (evil-filter-list #'null '(nil))))
     (should (equal (evil-filter-list #'null '(nil 1)) '(1)))
     (should (equal (evil-filter-list #'null '(nil 1 2 nil)) '(1 2)))
     (should (equal (evil-filter-list #'null '(nil nil 1)) '(1)))
@@ -8830,25 +9470,21 @@ Source
                        '((a . b))))))
 
 (ert-deftest evil-test-sort ()
-  "Test `evil-sort' and `evil-swap'"
+  "Test `evil-sort'."
   :tags '(evil util)
-  (let (a b c d)
-    (ert-info ("Two elements")
-      (setq a 2 b 1)
+  (ert-info ("Two elements")
+    (let ((a 2) (b 1))
       (evil-sort a b)
       (should (= a 1))
-      (should (= b 2))
-      (evil-swap a b)
-      (should (= a 2))
-      (should (= b 1)))
-    (ert-info ("Three elements")
-      (setq a 3 b 1 c 2)
+      (should (= b 2))))
+  (ert-info ("Three elements")
+    (let ((a 3) (b 1) (c 2))
       (evil-sort a b c)
       (should (= a 1))
       (should (= b 2))
-      (should (= c 3)))
-    (ert-info ("Four elements")
-      (setq a 4 b 3 c 2 d 1)
+      (should (= c 3))))
+  (ert-info ("Four elements")
+    (let ((a 4) (b 3) (c 2) (d 1))
       (evil-sort a b c d)
       (should (= a 1))
       (should (= b 2))
@@ -8975,7 +9611,7 @@ Source
 ;;; ESC
 
 (ert-deftest evil-test-esc-count ()
-  "Test if prefix-argument is transfered for key sequences with meta-key"
+  "Test if prefix-argument is transferred for key sequences with meta-key"
   :tags '(evil esc)
   (unless noninteractive
     (ert-info ("Test M-<right>")
@@ -9017,11 +9653,10 @@ Source
   (ert-info ("Execute yanked macro")
     (evil-test-buffer
       "[i]foo\e"
-      ("\"qd$@q\"qp"
-       "fooifoo\e")))
+      ("\"qD@q\"qp"
+      "fooifoo\e")))
   (ert-info ("Paste recorded marco")
     (evil-test-buffer
-      ""
       (evil-set-register ?q (vconcat "ifoo" [escape]))
       ("@q\"qp")
       "fooifoo\e")))
@@ -9100,61 +9735,85 @@ Source
     (ert-info ("Jump across files")
       (let ((temp-file (make-temp-file "evil-test-")))
         (unwind-protect
-          (evil-test-buffer
-            "[z] z z z z z z"
-            ("\M-x" "find-file" [return] temp-file [return] "inew buffer" [escape])
-            "new buffe[r]"
-            ("\C-o")
-            "[z] z z z z z z"
-            ("\C-i")
-            "new buffe[r]")
+            (evil-test-buffer
+              "[z] z z z z z z"
+              ("\M-x" "find-file" [return] temp-file [return] "inew buffer" [escape])
+              "new buffe[r]"
+              ("\C-o")
+              "[z] z z z z z z"
+              ("\C-i")
+              "new buffe[r]")
           (delete-file temp-file)
-          (with-current-buffer (get-file-buffer temp-file)
-            (set-buffer-modified-p nil))
-          (kill-buffer (get-file-buffer temp-file)))))))
+          (let ((buf (file-name-nondirectory temp-file)))
+            (when (get-buffer buf)
+              (with-current-buffer buf (set-buffer-modified-p nil))
+              (kill-buffer buf))))))
+    (ert-info ("Jump multiple times between files")
+      (let ((a (make-temp-file "evil-aa-" nil nil "evil-bb\n\nthis is a"))
+            (b (make-temp-file "evil-bb-" nil nil "evil-cc\n\nthis is b"))
+            (c (make-temp-file "evil-cc-" nil nil "this is c")))
+        (unwind-protect
+            (evil-test-buffer
+              (find-file a)
+              ("gf" [return])
+              "evil-cc\n\nthis is b"
+              ("gf" [return])
+              "this is c"
+              ("\C-o" "\C-o")
+              "evil-bb\n\nthis is a"
+              ("\C-i" "\C-i")
+              "this is c")
+          (dolist (f (list a b c))
+            (let ((buf (file-name-nondirectory f)))
+              (when (get-buffer buf)
+                (with-current-buffer buf (set-buffer-modified-p nil))
+                (kill-buffer buf)))
+            (delete-file f)))))))
 
 (ert-deftest evil-test-find-file ()
   :tags '(evil jumps)
+  (when (memq system-type '(cygwin windows-nt ms-dos))
+    (ert-skip "[INFO] GitHub Actions has different userprofile name."))
   (ert-info ("Find file at point (normal state)")
     (evil-with-temp-file file-name ""
       (evil-test-buffer
         (vconcat "i" file-name [escape])
-        (should (not (equal file-name (buffer-file-name (current-buffer)))))
+        (should-not (equal file-name (buffer-file-name)))
         ("gf")
-        (should (equal file-name (buffer-file-name (current-buffer)))))))
+        (should (equal file-name (buffer-file-name))))))
   (ert-info ("Find file at point (visual state)")
     (evil-with-temp-file file-name ""
       (evil-test-buffer
         (vconcat "iuser@localhost:" file-name "$" [escape])
-        (should (not (equal file-name (buffer-file-name (current-buffer)))))
+        (should-not (equal file-name (buffer-file-name)))
         ("0f:lvt$gf")
-        (should (equal file-name (buffer-file-name (current-buffer)))))))
+        (should (equal file-name (buffer-file-name))))))
   (ert-info ("Find file at point with line number")
     (let* ((line-number 3)
            (file-content (make-string (* 2 line-number) ?\n)))
       (evil-with-temp-file file-name (insert file-content)
           (evil-test-buffer
             (vconcat "i" file-name (format ":%d" line-number) [escape])
-            (should (and (not (equal file-name (buffer-file-name (current-buffer))))
+            (should (and (not (equal file-name (buffer-file-name)))
                          (not (equal line-number (line-number-at-pos)))))
             ("gF")
-            (should (and (equal file-name (buffer-file-name (current-buffer)))
+            (should (and (equal file-name (buffer-file-name))
                          (equal line-number (line-number-at-pos))))))))
   (ert-info ("Find file at point with line and column numbers")
     (let* ((line-number 3)
            (column-number 5)
-           (file-content (mapconcat 'identity
+           (file-content (mapconcat #'identity
                                     (make-list (* 2 line-number)
                                                (make-string (* 2 column-number) ?\s))
                                     "\n")))
       (evil-with-temp-file file-name (insert file-content)
         (evil-test-buffer
           (vconcat "i" file-name (format ":%d:%d" line-number column-number) [escape])
-          (should (and (not (equal file-name (buffer-file-name (current-buffer))))
+          (should (and (not (equal file-name (buffer-file-name)))
                        (not (equal line-number (line-number-at-pos)))
                        (not (equal column-number (current-column)))))
           ("gF")
-          (should (and (equal file-name (buffer-file-name (current-buffer)))
+          (should (and (equal file-name (buffer-file-name))
                        (equal line-number (line-number-at-pos))
                        (equal column-number (1+ (current-column))))))))))
 
@@ -9209,9 +9868,9 @@ Source
       (let ((inner-name (make-symbol (concat "evil-inner-" name)))
             (outer-name (make-symbol (concat "evil-a-" name))))
         `(progn
-           (evil-define-text-object ,inner-name (count &optional beg end type)
+           (evil-define-text-object ,inner-name (count &optional beg end _type)
              (evil-select-paren ,start-regex ,end-regex beg end type count nil))
-           (evil-define-text-object ,outer-name (count &optional beg end type)
+           (evil-define-text-object ,outer-name (count &optional beg end _type)
              (evil-select-paren ,start-regex ,end-regex beg end type count t))
            (define-key evil-inner-text-objects-map ,key #',inner-name)
            (define-key evil-outer-text-objects-map ,key #',outer-name))))
@@ -9236,6 +9895,15 @@ Source
       "| foo | aoe[u] | bar |"
       ("ci|testing" [escape])
       "| foo |testing| bar |")))
+
+(ert-deftest evil-test-kbd-macro ()
+  "Test recording and replaying of macros."
+  :tags '(evil kbd-macro)
+  (ert-info ("Execute macro an infinite number of times")
+    (evil-test-buffer "xxx"
+      (evil-set-register ?q "ryl")
+      (error 'end-of-line "\C-u@q")
+      "yyy")))
 
 (ert-deftest evil-test-undo-kbd-macro ()
   "Test if evil can undo the changes made by a keyboard macro
@@ -9266,6 +9934,34 @@ when an error stops the execution of the macro"
       ("uu")
       "line 1\n[l]ine 2\nline 3")))
 
+(ert-deftest evil-test-undo-jump ()
+  "Test that undo adds to the jump list."
+  :tags '(evil)
+  (let ((evil--jumps-buffer-targets "\\*\\(new\\|scratch\\|test\\)\\*"))
+    (ert-info ("Undo adds to the jump list")
+      (evil-test-buffer
+        "alpha [b]ravo charlie delta"
+        ("dw" "w")
+        "alpha charlie [d]elta"
+        ("u")
+        "alpha [b]ravo charlie delta"
+        ("``")
+        "alpha bravo charlie [d]elta"))))
+
+(ert-deftest evil-test-insert-state-undo ()
+  "Test that undo isn't lost when done from insert state."
+  :tags '(evil)
+  (skip-unless (version<= "28" emacs-version))
+  (let (evil-want-fine-undo)
+    (customize-set-variable 'evil-undo-system 'undo-redo)
+    (evil-test-buffer
+      "alpha [ ]delta"
+      (evil-define-key* 'insert 'local [f8] 'evil-undo)
+      ("icharlie" [f8] [escape])
+      "alpha[ ] delta"
+      ("\C-r")
+      "alpha [c]harlie delta")))
+
 (ert-deftest evil-test-visual-update-x-selection ()
   "Test `evil-visual-update-x-selection'."
   :tags '(evil)
@@ -9277,11 +9973,57 @@ when an error stops the execution of the macro"
       ;; should not raise an "Selecting deleted buffer" error
       (evil-visual-update-x-selection buf))))
 
+(ert-deftest evil-test-append-to-kbd-macro ()
+  "Test if evil can append to a keyboard macro."
+  :tags '(evil append to kbd-macro)
+  (ert-info ("When kbd-macro ends in <escape>")
+    (evil-test-buffer
+     (evil-set-register ?a (vconcat "ainserted text" [escape]))
+     (evil-set-register ?A (vconcat "a appended text" [escape]))
+     ("@a")
+     "inserted text appended tex[t]")))
+
+(ert-deftest evil-test-paren-jumping ()
+  :tags '(evil paren)
+  (ert-info ("Test doing motions on parens that you aren't in")
+    (evil-test-buffer
+      "[m]ain(argc, argv) char **argv; {"
+      ("dib" [escape])
+      "main([)] char **argv; {")
+    (evil-test-buffer
+      "[a]lpha (bravo) charlie "
+      ("yi(")
+      "alpha ([b]ravo) charlie "
+      ("$p")
+      "alpha (bravo) charlie brav[o]")
+    (evil-test-buffer
+     "[a]lpha (bravo (charlie))"
+     ("2di(")
+     "alpha (bravo ([)]")
+    (evil-test-buffer
+      :point-start "("
+      :point-end ")"
+     "(a)lpha [bravo [charlie]] [bravo]"
+     ("3di[")
+     "alpha [bravo [charlie]] [(])")
+    (evil-test-buffer
+"[#]include \"stdlib.h\"
+main(argc, argv) char **argv; {
+  while (1) malloc(0);
+}"
+      ("ci{  return 0;" [escape])
+"#include \"stdlib.h\"
+main(argc, argv) char **argv; {
+  return 0[;]
+}")))
+
 ;;; Core
 
 (ert-deftest evil-test-initial-state ()
   "Test `evil-initial-state'"
   :tags '(evil core)
+  ;; FIXME: These have a global effect, so better move them out and give them
+  ;; a proper namespace prefix.
   (define-derived-mode test-1-mode prog-mode "Test1")
   (define-derived-mode test-2-mode test-1-mode "Test2")
   (evil-set-initial-state 'test-1-mode 'insert)
@@ -9311,13 +10053,77 @@ when an error stops the execution of the macro"
             ;; is sufficient for `evil-initial-state-for-buffer' to work.
             (should-error (evil-initial-state-for-buffer)))
         (put 'test-1-mode 'derived-mode-parent 'prog-mode))))
-  (defalias 'test-1-alias-mode 'test-1-mode)
+  ;; FIXME: Same as above.
+  (defalias 'test-1-alias-mode #'test-1-mode)
   (define-derived-mode test-3-mode test-1-alias-mode "Test3")
   (evil-set-initial-state 'test-1-mode 'insert)
   (ert-info ("Check inheritance from major mode aliases")
     "abc\ndef\n"
     (test-3-mode)
     (should (eq evil-state 'insert))))
+
+(ert-deftest evil-test-keep-input-method ()
+  "Test that the input method is preserved when changing the major mode."
+  :tags '(evil core input-method)
+  (cl-flet ((use-german-input-method () (set-input-method "german-prefix")))
+    (unwind-protect
+        (progn
+          (add-hook 'text-mode-hook #'use-german-input-method)
+          (evil-test-buffer
+           "[]"
+           (should (null evil-input-method))
+           ("a\"a" [escape])
+           "\"[a]"
+           (text-mode)
+           (should (equal evil-input-method "german-prefix"))
+           ("a\"a" [escape])
+           "\"a[ä]"
+           (emacs-lisp-mode)
+           (should (equal evil-input-method "german-prefix"))))
+      (remove-hook 'text-mode-hook #'use-german-input-method))))
+
+(ert-deftest evil-retab ()
+  "Test the :retab command"
+  :tags '(evil)
+  (ert-info ("From tabs to spaces")
+    (evil-test-buffer
+      "def foo():\n\twhile True:\n\t\treturn\n"
+      (setq indent-tabs-mode nil)
+      (setq tab-width 4)
+      (":retab" [return])
+      "def foo():\n    while True:\n        return\n"))
+  (ert-info ("From spaces to tabs")
+    (evil-test-buffer
+      "def foo():\n    while True:\n        return\n"
+      (setq indent-tabs-mode t)
+      (setq tab-width 4)
+      (":retab" [return])
+      "def foo():\n\twhile True:\n\t\treturn\n"))
+  (ert-info ("Specify tab width as an argument")
+    (evil-test-buffer
+      "def foo():\n\twhile True:\n\t\treturn\n"
+      (setq indent-tabs-mode nil)
+      (setq tab-width 4)
+      (":retab 2" [return])
+      "def foo():\n  while True:\n    return\n"))
+  (ert-info ("Invalid argument")
+    (evil-test-buffer
+      "def foo():\n\twhile True:\n\t\treturn\n"
+      (should-error (execute-kbd-macro ":retab foo" [return])))))
+
+(ert-deftest evil-retab-visual ()
+  "Test the :retab command on visual line selection.
+This test fails in the batch mode (and therefore in the GitHub CI)
+but it works fine in `M-x ert-run-tests-interactively'."
+  :tags '(evil visual)
+  (skip-unless (not noninteractive))
+  (ert-info ("Retab only selected lines")
+    (evil-test-buffer
+      "def foo():\n\twhile True:\n\t\treturn\n"
+      (setq indent-tabs-mode nil)
+      (setq tab-width 4)
+      ("Vj" ":retab" [return])
+      "def foo():\n    while True:\n\t\treturn\n")))
 
 (provide 'evil-tests)
 

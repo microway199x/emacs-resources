@@ -81,6 +81,8 @@ Search
 
 .. elisp:autovariable:: evil-ex-hl-update-delay
 
+.. elisp:autovariable:: evil-ex-search-incremental
+
 
 Indentation
 -----------
@@ -113,6 +115,8 @@ of them can be tweaked using the following variables.
 .. elisp:autovariable:: evil-move-cursor-back
 
 .. elisp:autovariable:: evil-move-beyond-eol
+
+.. elisp:autovariable:: evil-v$-excludes-newline
 
 .. elisp:autovariable:: evil-cross-lines
 
@@ -170,6 +174,8 @@ Miscellaneous
 .. elisp:autovariable:: evil-mode-line-format
 
 .. elisp:autovariable:: evil-mouse-word
+
+.. elisp:autovariable:: evil-transient-mouse-selection
 
 .. elisp:autovariable:: evil-bigword
 

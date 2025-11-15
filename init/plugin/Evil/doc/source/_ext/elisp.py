@@ -2,15 +2,11 @@ import re
 from os import path
 import json
 
-from docutils import nodes
-from docutils.parsers.rst import Directive
-
 from sphinx import addnodes
 from sphinx.domains import Domain, ObjType, Index
 from sphinx.domains.std import StandardDomain
 from sphinx.directives import ObjectDescription
 from sphinx.roles import XRefRole
-from sphinx.util.docfields import Field
 from sphinx.util.nodes import make_refnode
 
 
@@ -18,15 +14,14 @@ with open(path.join(path.dirname(__file__), '..', '..', 'docstringdb.json')) as 
     DATA = json.load(f)
 
 
-re_evilcode = re.compile(r"`(evil-[^']*)'")
-re_code = re.compile(r"`([^:][^ ']*)'")
-re_kwd = re.compile(r"`(:[^']*)'")
+re_evilcode = re.compile(r"‘(evil-[^’]*)’")
+re_code = re.compile(r"‘([^:][^ ’]*)’")
+re_kwd = re.compile(r"‘(:[^’]*)’")
 re_item = re.compile(r"([^\n])\n- ")
-re_sexp = re.compile(r"\([A-Z \-\.'`\[\]]+\)|[A-Z\-]+")
+re_sexp = re.compile(r"\([A-Z \-\.‘’\[\]]+\)|[A-Z\-]+")
 re_capitals = re.compile(r"[A-Z\-]+")
 re_nonspace = re.compile(r"[^ ]")
 re_signature = re.compile(r'\(fn (.*)\)')
-re_keymap_or_kbd = re.compile(r"\\[\[<]([^\]>]*)[\]>]")
 
 emphasis = [
     'thing-at-point',
@@ -52,7 +47,7 @@ def process_docstring(docstring, capitals=None):
         in_block = False
         for line in lines:
             try:
-                indented = next(re_nonspace.finditer(line)).start(0) > 3
+                indented = next(re_nonspace.finditer(line)).start(0) >= 4
             except StopIteration:
                 indented = None
             if indented is True and not in_block:
@@ -72,21 +67,6 @@ def process_docstring(docstring, capitals=None):
 
     # Substitute `:alpha' with ``alpha``
     docstring = re_kwd.sub(r'``\1``', docstring)
-
-    # Translate key bindings
-    keymap = None
-    def substitute_binding(match):
-        nonlocal keymap
-        if match.group(0)[1] == '<':
-            keymap = match.group(1)
-            return ''
-        if keymap is None:
-            print(docstring)
-            assert False
-            return '???'
-        key = DATA[keymap]['keymap-inv'][match.group(1)]
-        return f':kbd:`{key}`'
-    docstring = re_keymap_or_kbd.sub(substitute_binding, docstring)
 
     # Add empty line between list items
     docstring = re_item.sub(r'\1\n\n- ', docstring)
