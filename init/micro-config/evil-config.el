@@ -17,7 +17,7 @@
 
 (use-package evil
   ;;:ensure t
-  :after ef-themes
+  ;;:after 
   :init
   :bind
   :config
