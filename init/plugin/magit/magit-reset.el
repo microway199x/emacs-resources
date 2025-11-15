@@ -1,19 +1,16 @@
-;;; magit-reset.el --- reset fuctionality  -*- lexical-binding: t -*-
+;;; magit-reset.el --- Reset functionality  -*- lexical-binding:t -*-
 
-;; Copyright (C) 2010-2021  The Magit Project Contributors
-;;
-;; You should have received a copy of the AUTHORS.md file which
-;; lists all contributors.  If not, see http://magit.vc/authors.
+;; Copyright (C) 2008-2025 The Magit Project Contributors
 
-;; Author: Jonas Bernoulli <jonas@bernoul.li>
-;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
+;; Author: Jonas Bernoulli <emacs.magit@jonas.bernoulli.dev>
+;; Maintainer: Jonas Bernoulli <emacs.magit@jonas.bernoulli.dev>
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
-;; Magit is free software; you can redistribute it and/or modify it
+;; Magit is free software: you can redistribute it and/or modify it
 ;; under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 3, or (at your option)
-;; any later version.
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
 ;;
 ;; Magit is distributed in the hope that it will be useful, but WITHOUT
 ;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
@@ -21,7 +18,7 @@
 ;; License for more details.
 ;;
 ;; You should have received a copy of the GNU General Public License
-;; along with Magit.  If not, see http://www.gnu.org/licenses.
+;; along with Magit.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -31,19 +28,22 @@
 
 (require 'magit)
 
-;;;###autoload (autoload 'magit-reset "magit" nil t)
+;;; Commands
+
+;;;###autoload(autoload 'magit-reset "magit" nil t)
 (transient-define-prefix magit-reset ()
   "Reset the `HEAD', index and/or worktree to a previous state."
   :man-page "git-reset"
-  ["Reset"
-   ("m" "mixed    (HEAD and index)"        magit-reset-mixed)
-   ("s" "soft     (HEAD only)"             magit-reset-soft)
-   ("h" "hard     (HEAD, index and files)" magit-reset-hard)
-   ("k" "keep     (HEAD and index, keeping uncommitted)" magit-reset-keep)
-   ("i" "index    (only)"                  magit-reset-index)
-   ("w" "worktree (only)"                  magit-reset-worktree)
-   ""
-   ("f" "a file"                           magit-file-checkout)])
+  [["Reset"
+    ("b" "branch" magit-branch-reset)
+    ("f" "file"   magit-file-checkout)]
+   ["Reset this"
+    ("m" "mixed    (HEAD and index)" magit-reset-mixed)
+    ("s" "soft     (HEAD only)"      magit-reset-soft)
+    ("h" "hard     (HEAD, index and worktree)" magit-reset-hard)
+    ("k" "keep     (HEAD and index, keeping uncommitted)" magit-reset-keep)
+    ("i" "index    (only)"           magit-reset-index)
+    ("w" "worktree (only)"           magit-reset-worktree)]])
 
 ;;;###autoload
 (defun magit-reset-mixed (commit)
@@ -55,14 +55,14 @@
 ;;;###autoload
 (defun magit-reset-soft (commit)
   "Reset the `HEAD' to COMMIT, but not the index and working tree.
-\n(git reset --soft REVISION)"
+\n(git reset --soft COMMIT)"
   (interactive (list (magit-reset-read-branch-or-commit "Soft reset %s to")))
   (magit-reset-internal "--soft" commit))
 
 ;;;###autoload
 (defun magit-reset-hard (commit)
   "Reset the `HEAD', index, and working tree to COMMIT.
-\n(git reset --hard REVISION)"
+\n(git reset --hard COMMIT)"
   (interactive (list (magit-reset-read-branch-or-commit
                       (concat (magit--propertize-face "Hard" 'bold)
                               " reset %s to"))))
@@ -71,7 +71,7 @@
 ;;;###autoload
 (defun magit-reset-keep (commit)
   "Reset the `HEAD' and index to COMMIT, while keeping uncommitted changes.
-\n(git reset --keep REVISION)"
+\n(git reset --keep COMMIT)"
   (interactive (list (magit-reset-read-branch-or-commit "Reset %s to")))
   (magit-reset-internal "--keep" commit))
 
@@ -89,10 +89,10 @@ head this effectively unstages all changes.
   "Reset the worktree to COMMIT.
 Keep the `HEAD' and index as-is."
   (interactive (list (magit-read-branch-or-commit "Reset worktree to")))
-  (magit-wip-commit-before-change nil " before reset")
+  (magit-run-before-change-functions nil "reset")
   (magit-with-temp-index commit nil
     (magit-call-git "checkout-index" "--all" "--force"))
-  (magit-wip-commit-after-apply nil " after reset")
+  (magit-run-after-apply-functions nil "reset")
   (magit-refresh))
 
 ;;;###autoload
@@ -127,11 +127,22 @@ or \"detached head\" will be substituted for %s."
       (git-commit-setup-font-lock)
       (git-commit-save-message)))
   (let ((cmd (if (and (equal commit "HEAD") (not arg)) "unstage" "reset")))
-    (magit-wip-commit-before-change nil (concat " before " cmd))
+    (magit-run-before-change-functions nil cmd)
     (magit-run-git "reset" arg commit "--" path)
     (when (equal cmd "unstage")
-      (magit-wip-commit-after-apply nil " after unstage"))))
+      (magit-run-after-apply-functions nil "unstage"))))
 
 ;;; _
 (provide 'magit-reset)
+;; Local Variables:
+;; read-symbol-shorthands: (
+;;   ("and$"         . "cond-let--and$")
+;;   ("and>"         . "cond-let--and>")
+;;   ("and-let"      . "cond-let--and-let")
+;;   ("if-let"       . "cond-let--if-let")
+;;   ("when-let"     . "cond-let--when-let")
+;;   ("while-let"    . "cond-let--while-let")
+;;   ("match-string" . "match-string")
+;;   ("match-str"    . "match-string-no-properties"))
+;; End:
 ;;; magit-reset.el ends here

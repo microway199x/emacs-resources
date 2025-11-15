@@ -5,10 +5,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun micro-evil-dir-set()
   (if (eq system-type `windows-nt)
-      (add-to-list 'load-path 
-              (concat micro-plugin-path "Evil\\"))
-      (add-to-list 'load-path 
-              (concat micro-plugin-path "Evil/"))))
+      (progn 
+          (add-to-list 'load-path (concat micro-plugin-path "evil\\"))
+          )
+      (progn 
+          (add-to-list 'load-path (concat micro-plugin-path "evil/"))
+          )
+      ))
 (micro-evil-dir-set)
 
 

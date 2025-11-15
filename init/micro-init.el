@@ -23,6 +23,7 @@
 
 (micro-system-chk)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;* 2. common plugin setting ;;;;;;;;;;;;;;;;;;;;;;;
 ;;common settiong
 ;;evil 
@@ -47,10 +48,31 @@
                                   ))
 
 (add-to-list 'load-path micro-config-path)
-(add-to-list 'load-path micro-plugin-path)
 (add-to-list 'load-path micro-prog-mode-path)
 
+(defun micro-common-plugin-lib-set()
+  (if (eq system-type `windows-nt)
+      (progn
+          (add-to-list 'load-path (concat micro-plugin-path "micro-common-plugin-lib\\dash\\"))
+          (add-to-list 'load-path (concat micro-plugin-path "micro-common-plugin-lib\\git-commit\\"))
+          (add-to-list 'load-path (concat micro-plugin-path "micro-common-plugin-lib\\transient\\"))
+          (add-to-list 'load-path (concat micro-plugin-path "micro-common-plugin-lib\\with-editor\\"))
+          (add-to-list 'load-path (concat micro-plugin-path "micro-common-plugin-lib\\cond-let\\"))
+          (add-to-list 'load-path (concat micro-plugin-path "micro-common-plugin-lib\\llama\\"))
+      )
+      (progn 
+          (add-to-list 'load-path (concat micro-plugin-path "micro-common-plugin-lib/dash/"))
+          (add-to-list 'load-path (concat micro-plugin-path "micro-common-plugin-lib/git-commit/"))
+          (add-to-list 'load-path (concat micro-plugin-path "micro-common-plugin-lib/transient/"))
+          (add-to-list 'load-path (concat micro-plugin-path "micro-common-plugin-lib/with-editor/"))
+          (add-to-list 'load-path (concat micro-plugin-path "micro-common-plugin-lib/cond-let"))
+          (add-to-list 'load-path (concat micro-plugin-path "micro-common-plugin-lib/llama"))
+      )
+      ))
+(micro-common-plugin-lib-set)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;* 2.1 Plugin setting config load ;;;;;;;;;;;;;;;;;;
 (add-hook 'emacs-startup-hook 
           (load (concat micro-config-path "common-config")))
 ;;perfer use default undo-redo
