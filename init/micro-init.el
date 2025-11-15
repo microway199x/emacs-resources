@@ -89,9 +89,6 @@
           (load (concat micro-config-path "ivy-config")))
 
 (add-hook 'emacs-startup-hook 
-                 (load (concat micro-config-path "magit-config")))
-
-(add-hook 'emacs-startup-hook 
           (load (concat micro-config-path "sr-speedbar-config")))
 
 (add-hook 'emacs-startup-hook 
