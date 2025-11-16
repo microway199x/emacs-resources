@@ -98,9 +98,18 @@
 (add-to-list 'load-path (concat micro-theme-path "gruvbox"))
 (add-to-list 'load-path (concat micro-theme-path "ef-themes"))
 (add-to-list 'custom-theme-load-path micro-theme-path)
-;(load-theme 'solarized-[light|dark] t))
-;(load-theme 'gruvbox-light-soft t)
-(load-theme 'micro-light t)
+
+(use-package micro-light-theme
+   :config 
+    (load-theme 'micro-light t)
+    ;;fontset for chinese 
+    (if (eq system-type `windows-nt)
+      (progn
+         (set-frame-font "Consolas-14")
+         (set-fontset-font "fontset-default"  
+                           'gb18030 "KaiTi" ));; end progn
+    (set-frame-font "Mono-14"))
+);;;end use-package
 
 ;;(use-package ef-themes
 ;;  ;;:ensure t
@@ -128,17 +137,18 @@
 ;;  ;; `modus-themes-load-random-light').
 ;;  ;;(modus-themes-load-theme 'ef-summer)
 ;;  (modus-themes-load-random-light)
+
+;;  ;;fontset for chinese 
+;;  (if (eq system-type `windows-nt)
+;;    (progn
+;;       (set-frame-font "Consolas-14")
+;;       (set-fontset-font "fontset-default"  
+;;                         'gb18030 "KaiTi" ));; end progn
+;;  (set-frame-font "Mono-14"))
 ;;
 ;;) ;;;end use-packages 
 
 
-  ;;fontset for chinese 
-  (if (eq system-type `windows-nt)
-    (progn
-       (set-frame-font "Consolas-14")
-       (set-fontset-font "fontset-default"  
-                         'gb18030 "KaiTi" ));; end progn
-  (set-frame-font "Mono-14"))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;设置中英文字体，使中英文字体都舒服的显示
 ;;以下两种方式都可以良好的使用
