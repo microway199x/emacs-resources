@@ -37,9 +37,9 @@
 (defun micro-htmlize-dir-set()
   (if (eq system-type `windows-nt)
       (add-to-list 'load-path 
-              (concat micro-plugin-path "htmlize\\"))
+              (concat micro-plugin-path "emacs-htmlize\\"))
       (add-to-list 'load-path 
-              (concat micro-plugin-path "htmlize/"))))
+              (concat micro-plugin-path "emacs-htmlize/"))))
 (micro-htmlize-dir-set)
 
 ;;(require 'htmlize)
@@ -52,18 +52,6 @@
         :rules "all"
         :frame "border"))
 
-(defadvice org-html-paragraph (before org-html-paragraph-advice (paragraph contents info) activate)
-  "Join consecutive Chinese lines into a single long line without unwanted space when exporting `org-mode' to html."
-  (let* ((origin-contents (ad-get-arg 1))
-         (fixed-contents
-          (replace-regexp-in-string
-           (rx
-            (group (or (category chinese) "<" ">"))
-            (regexp "\n")
-            (group (or (category chinese) "<" ">")))
-           "\\1\\2"
-           origin-contents)))
-    (ad-set-arg 1 fixed-contents)))
 
 ;;;;1.2 使用pandoc ORG-MODE 转 WROD，
 (defun v-org-export-docx ()
@@ -71,7 +59,8 @@
   (let ((docx-file (concat (file-name-sans-extension (buffer-file-name)) ".docx"))
        ;;use default template   (template-file "/path/template.docx"))
 	)
-    ;;(shell-command (format "pandoc %s -o %s --reference-doc=%s" (buffer-file-name) docx-file template-file))
+      ;;(shell-command (format "pandoc %s -o %s --reference-doc=%s" (buffer-file-name) docx-file (expand-file-name (concat micro-config-path "/template-file/template-file.docx"))))
+      ;;(message (format "pandoc %s -o %s --reference-doc=%s" (buffer-file-name) docx-file (expand-file-name (concat micro-config-path "/template-file/template-file.docx"))))
       (shell-command (format "pandoc %s -o %s " (buffer-file-name) docx-file ))
     (message "Convert finish: %s" docx-file)))
 
@@ -89,6 +78,65 @@
 (setq org-startup-indented t)
 ;;TODO, (add-hook 'org-mode-hook (org-num-mode t)) can not use as init config
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;1.5 org html export CSS Template 设置
+;; 设置全局 HTML CSS 模板
+(setq org-export-with-toc t
+      org-export-with-section-numbers t
+      org-html-toplevel-hlevel 2    ;hlevel 1 is the file title, root
+      org-export-headline-levels 5  ; 关键设置：设置最大导出标题层级
+      org-html-head-extra 
+         (format "<link rel=\"stylesheet\" href=\"file://%s\">
+             <script>
+                 document.addEventListener('DOMContentLoaded', function() {
+                   // 复制文档开头的目录到侧边栏
+                   const toc = document.getElementById('table-of-contents');
+                   if (toc) {
+                     // 创建侧边目录容器
+                     let sideToc = document.createElement('div');
+                     sideToc.id = 'side-toc';
+                     sideToc.innerHTML = toc.innerHTML;
+                     
+                     // 添加关闭按钮
+                     const closeBtn = document.createElement('span');
+                     closeBtn.className = 'toc-close';
+                     closeBtn.innerHTML = '&times;';
+                     sideToc.insertBefore(closeBtn, sideToc.firstChild);
+                     
+                     // 添加到文档
+                     document.body.appendChild(sideToc);
+                     
+                     // 添加关闭功能
+                     closeBtn.addEventListener('click', function() {
+                       sideToc.classList.remove('visible');
+                       document.querySelector('.org-document').classList.add('hidden');
+                     });
+                     
+                     // 创建汉堡菜单按钮
+                     const openBtn = document.createElement('div');
+                     openBtn.id = 'side-toc-open';
+                     openBtn.innerHTML = '☰';
+                     openBtn.style.position = 'fixed';
+                     openBtn.style.top = '10px';
+                     openBtn.style.left = '10px';
+                     openBtn.style.fontSize = '24px';
+                     openBtn.style.cursor = 'pointer';
+                     openBtn.style.color = '#3498db';
+                     openBtn.style.zIndex = '100';
+                     openBtn.style.padding = '5px';
+                     
+                     // 添加点击事件
+                     openBtn.addEventListener('click', function() {
+                       sideToc.classList.toggle('visible');
+                       document.querySelector('.org-document').classList.toggle('hidden');
+                     });
+                     
+                     // 添加到文档
+                     document.body.appendChild(openBtn);
+                   }
+                 });
+             </script>"
+           (expand-file-name (concat micro-config-path "/template-file/v-org-css_html-template.css"))))
 ;;;}} 1. org-mode export format setting
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -107,11 +155,9 @@
 
 (setq org-plantuml-jar-path
       (expand-file-name "C:\\tools\\plantuml.jar"))
-;;;{{2.1 org export babel设置
+
 (setq org-export-babel-evaluate nil)
 (setq org-confirm-babel-evaluate nil)
-
-;;;}}2.1 org export babel设置
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;}} 2.0 org babel 支持设置
 
@@ -123,27 +169,24 @@
 ;;;如果没有"|"则最后一项表示完成,如果有"|"，则"|"后面的项表示完成
 (setq org-log-done 'time) ;;记录done的时间
 (setq org-todo-keywords
-  '((type "工作---(w)" "学习---(s)" "休闲---(l)" "|")
+  '(
     (sequence "?" ">" "=" "|"  "#")
-    (sequence "TODO(t)" "BOXD" "ONGO(o)" "WAIT" "|" "DONE(d!)" "ABORT(a!)")))
+    (sequence "TODO(t)" "BOXD" "ONGO(o)" "WAIT(w)" "|" "DONE(d!)" "ABORT(a!)")))
 ;; (setq org-todo-keywords
 ;;   '((type "工作---(w!)" "学习---(s!)" "休闲---(l!)" "|")
 ;;     (sequence "TODO===(t!)" "IMDO===" "ONGO>>>(o!)" "|" "DONE---(d!)" "ABORT--(a!)")))
 
 ;;;3.2 TODO 关键字face
-;;;A: 重要，紧急  : 突发
-;;;B: 重要，不紧急: 提前规划，预防优先
-;;;C: 不重要，不紧急 or 紧急
 (setq org-todo-keyword-faces 
       '(
         ("?" . "red")
         (">" . "skyblue")
         ("=" . "red")
         ("#" . "green")
-        ("TODO" . "red")
+	("TODO" . "red")
         ("BOXD" . "red")
-        ("ONGO" . "skyblue")
         ("WAIT" . "purple")
+        ("ONGO" . "skyblue")
         ("DONE" . "green")
         ("ABORT" . "gray")))
 
@@ -164,15 +207,6 @@
 ;;;}}4.0 mics& funcs setting 设置常用公共函数
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;{{5.0 org-mode beautify code 
-;;; 调整SRC code 代码颜色
-(setq org-fontify-quote-and-verse-blocks t)
-(set-face-attribute 'org-code nil :background
-                     (face-attribute 'org-block :background))
-
-;;;}}5.0 org-mode beautify code 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;org setting end here
