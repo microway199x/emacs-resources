@@ -13,12 +13,14 @@
   """open todo file and agenda mode"""
   (interactive)
   (find-file (concat micro-org-capture-path "todo_capture.org"))
+  (find-file (concat micro-org-capture-path "todo_BrainStorm.org"))
   (find-file (concat micro-org-capture-path "todo.org"))
   (find-file "D:/micro_data_plantform/work/~notes/org-gtd/todo.org")
   (org-mode)
   (setq org-agenda-start-with-log-mode t)
   (setq org-agenda-files (list (concat micro-org-capture-path "todo.org")
                                (concat micro-org-capture-path "todo_capture.org")
+                               (concat micro-org-capture-path "todo_BrainStorm.org")
                                "D:/micro_data_plantform/work/~notes/org-gtd/todo.org"
                           ))
   ;;(org-agenda)
@@ -28,7 +30,7 @@
 ;;(setq org-agenda-files (file-expand-wildcards (concat micro-org-capture-path "*.org")))
 ;;(setq org-agenda-files (list (file-expand-wildcards (concat micro-org-capture-path "*.org"))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;¨¦¨¨??org-capture
+;;;;;Â¨Â¦Â¨Â¨??org-capture
 (global-set-key (kbd "C-c c") 'org-capture)
 (setq org-capture-templates 
       ;;;;add todo task
