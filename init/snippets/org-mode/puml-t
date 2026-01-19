@@ -2,6 +2,6 @@
 # name: puml-t
 # key: puml-t
 # --
-#+begin_src plantuml :file ./`(file-name-nondirectory buffer-file-name)`/${1:picture_name}.png  :cmdline -charset UTF-8
+#+begin_src plantuml :file ./_images_`(file-name-nondirectory buffer-file-name)`/${1:picture_name}.png  :cmdline -charset UTF-8
     $0
 #+end_src
