@@ -1,12 +1,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;»ù±¾ÉèÖÃ
+;;åŸºæœ¬è®¾ç½®
 
 ;;Line mode Config,;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;(global-linum-mode 1)  ;;×ó±ßÏÔÊ¾ĞĞºÅ
-;;(global-hl-line-idle-mode 1);;¿ÕÏĞÊ±¸ßÁÁµ±Ç°ĞĞ
+;;(global-linum-mode 1)  ;;å·¦è¾¹æ˜¾ç¤ºè¡Œå·
+;;(global-hl-line-idle-mode 1);;ç©ºé—²æ—¶é«˜äº®å½“å‰è¡Œ
 
 ;;highlight back and face config ;;;;;;;;;;;;;;;;;;;
-;;Í¨¹ıM-x describe-face£¬»Ø³µ£¬Ö®ºóÑ¡Ôñhigh-lightÅäÖÃÏÔÊ¾ÑÕÉ«µÈ»òÍ¨¹ıÏÂÃæµÄÃüÁîÅäÖÃ
+;;é€šè¿‡M-x describe-faceï¼Œå›è½¦ï¼Œä¹‹åé€‰æ‹©high-lighté…ç½®æ˜¾ç¤ºé¢œè‰²ç­‰æˆ–é€šè¿‡ä¸‹é¢çš„å‘½ä»¤é…ç½®
 ;; (1)click on MenuBar Options option,
 ;; (2)then click on Customize Emacs,
 ;; (3)then click on Browse Customization Groups,
@@ -17,51 +17,54 @@
 (global-hl-line-mode 1)
 (set-face-background 'highlight "#222")
 (set-face-foreground 'highlight 'unspecified)
-(set-face-underline 'highlight t)                ;;ÉèÖÃ¿ÉÄÜ±»Ö÷Ìâ¸²¸Ç£¬²»Æğ×÷ÓÃ
+(set-face-underline 'highlight t)                ;;è®¾ç½®å¯èƒ½è¢«ä¸»é¢˜è¦†ç›–ï¼Œä¸èµ·ä½œç”¨
 
 (transient-mark-mode 1)                          ;;highlight mark area
 
 
 ;;frame & window config ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;Êó±êÖ»»á»¬µ½Àë±ß½ç3ĞĞµÄÎ»ÖÃ
+;;;é¼ æ ‡åªä¼šæ»‘åˆ°ç¦»è¾¹ç•Œ3è¡Œçš„ä½ç½®
 (setq scroll-margin 3
       scroll-conservatively 10000)           
 
-(tool-bar-mode -1)                               ;;Òş²Øtool bar
+(tool-bar-mode -1)                               ;;éšè—tool bar
 
-;;;frame setting;;;;;;;;;;
+;;è®¾ç½®default frame window size
 ;;(set-frame-position (selected-frame) 0 0)
-;;(setq default-frame-alist
-;;             '((height . 28) (width . 130) (menu-bar-lines . 20) (tool-bar-lines . 2)))
+(setq default-frame-alist '((height . 39) 
+                            (width . 130) 
+                            (menu-bar-lines . 20)
+                          ;;(tool-bar-lines . 2)
+                            ))
 
-;;ÏÔÊ¾µ±Ç°bufferÂ·¾¶Ãû,
+;;æ˜¾ç¤ºå½“å‰bufferè·¯å¾„å,
 (setq frame-title-format
       (list  "%b" 
              "(" 
              '(buffer-file-name "%f" (dired-directory dired-directory "%b")) 
              ")"  ))
 
-;; window Text width setting Ä¬ÈÏÏÔÊ¾ 80ÁĞ¾Í»»ĞĞ
+;; window Text width setting é»˜è®¤æ˜¾ç¤º 80åˆ—å°±æ¢è¡Œ
 (setq-default fill-column 80) 
 (global-display-fill-column-indicator-mode)
 ;;;line wrap mode setting
-(global-visual-line-mode 1)                     ;; ÆôÓÃÈ«¾Övisual lineÄ£Ê½
-(global-visual-wrap-prefix-mode 1)              ;; ÉèÖÃ»ùÓÚµ¥´Ê±ß½çµÄÕÛĞĞÇ°×º
-(setq word-wrap-by-category t)                  ;; ¿ÉÑ¡£ºµ÷ÕûÕÛĞĞ·ûºÅÏÔÊ¾
+(global-visual-line-mode 1)                     ;; å¯ç”¨å…¨å±€visual lineæ¨¡å¼
+(global-visual-wrap-prefix-mode 1)              ;; è®¾ç½®åŸºäºå•è¯è¾¹ç•Œçš„æŠ˜è¡Œå‰ç¼€
+(setq word-wrap-by-category t)                  ;; å¯é€‰ï¼šè°ƒæ•´æŠ˜è¡Œç¬¦å·æ˜¾ç¤º
 (setq visual-line-fringe-indicators  
       '(left-curly-arrow right-curly-arrow))
 
 ;;cursor display setting ;;;;;;;;;;;
-(mouse-avoidance-mode 'animate)                 ;;¹â±ê¿¿½üÊó±êÖ¸ÕëÊ±£¬ÈÃÊó±êÖ¸Õë×Ô¶¯ÈÃ¿ª£¬±ğµ²×¡ÊÓÏß¡£
-(blink-cursor-mode -1)                          ;;Ö¸Õë²»ÒªÉÁ£¬ÑÛ¾¦»¨ÁË
+(mouse-avoidance-mode 'animate)                 ;;å…‰æ ‡é è¿‘é¼ æ ‡æŒ‡é’ˆæ—¶ï¼Œè®©é¼ æ ‡æŒ‡é’ˆè‡ªåŠ¨è®©å¼€ï¼Œåˆ«æŒ¡ä½è§†çº¿ã€‚
+(blink-cursor-mode -1)                          ;;æŒ‡é’ˆä¸è¦é—ªï¼Œçœ¼ç›èŠ±äº†
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;ÉèÖÃÏÔÊ¾À¨ºÅÆ¥Åä
+;;;;è®¾ç½®æ˜¾ç¤ºæ‹¬å·åŒ¹é…
 (show-paren-mode t)  
 (setq show-paren-style 'parenthesis)
 
 ;;;easy use setting ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(setq default-major-mode 'text-mode)            ;; Ò»´ò¿ª¾ÍÆôÓÃ text Ä£Ê½¡£
+(setq default-major-mode 'text-mode)            ;; ä¸€æ‰“å¼€å°±å¯ç”¨ text æ¨¡å¼ã€‚
 
 ;;tab setting  ;;;;;;;;;;;;;;;;;;;;;
 (setq tab-width 4) 
@@ -70,30 +73,30 @@
 (setq-default indent-tabs-mode nil) 
 
 ;;short cuts set;;;;;;;;;;;;;;;;;;;;
-(setq echo-keystrokes 0.1)                      ;;¾¡¿ìÏÔÊ¾°´¼üĞòÁĞ
+(setq echo-keystrokes 0.1)                      ;;å°½å¿«æ˜¾ç¤ºæŒ‰é”®åºåˆ—
 (fset 'yes-or-no-p 'y-or-n-p)
 
 (global-unset-key  (kbd "C-SPC"))
 (global-set-key    (kbd "M-SPC") 'set-mark-command)
 
 ;;mics setting;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;¹Ø±Õ·³ÈËµÄ³ö´íÊ±µÄÌáÊ¾Éù
+;;å…³é—­çƒ¦äººçš„å‡ºé”™æ—¶çš„æç¤ºå£°
 (setq visible-bell t)
 (setq inhibit-startup-message t)
 (setq gnus-inhibit-startup-message t)
 
 ;;backup file config ;;;;;;;;;;;;;;;
-(setq-default make-backup-files nil)            ;;²»Éú³ÉÁÙÊ±ÎÄ¼ş
-(setq make-backup-files nil)                    ;;²»Éú³ÉÁÙÊ±ÎÄ¼ş
+(setq-default make-backup-files nil)            ;;ä¸ç”Ÿæˆä¸´æ—¶æ–‡ä»¶
+(setq make-backup-files nil)                    ;;ä¸ç”Ÿæˆä¸´æ—¶æ–‡ä»¶
 
-(setq select-enable-clipboard t)                ;;ÔÊĞíemacsºÍÍâ²¿ÆäËû³ÌĞòµÄÕ³Ìù;;
+(setq select-enable-clipboard t)                ;;å…è®¸emacså’Œå¤–éƒ¨å…¶ä»–ç¨‹åºçš„ç²˜è´´;;
 
 ;;auto revert and auto save ;;;;;;;;
-(global-auto-revert-mode t)                    ;;ÎÄ¼ş¸ü¸Äºó×Ô¶¯¼ÓÔØÎÄ¼ş
-;;(setq auto-save-default nil)                 ;;Ä¬ÈÏ300s×Ô¶¯±£´æÒ»´Î
+(global-auto-revert-mode t)                    ;;æ–‡ä»¶æ›´æ”¹åè‡ªåŠ¨åŠ è½½æ–‡ä»¶
+;;(setq auto-save-default nil)                 ;;é»˜è®¤300sè‡ªåŠ¨ä¿å­˜ä¸€æ¬¡
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;ÉèÖÃÖ÷Ìâ
+;;è®¾ç½®ä¸»é¢˜
 (add-to-list 'load-path micro-theme-path)
 (add-to-list 'load-path (concat micro-theme-path "gruvbox"))
 (add-to-list 'load-path (concat micro-theme-path "ef-themes"))
@@ -150,8 +153,8 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;ÉèÖÃÖĞÓ¢ÎÄ×ÖÌå£¬Ê¹ÖĞÓ¢ÎÄ×ÖÌå¶¼Êæ·şµÄÏÔÊ¾
-;;ÒÔÏÂÁ½ÖÖ·½Ê½¶¼¿ÉÒÔÁ¼ºÃµÄÊ¹ÓÃ
+;;è®¾ç½®ä¸­è‹±æ–‡å­—ä½“ï¼Œä½¿ä¸­è‹±æ–‡å­—ä½“éƒ½èˆ’æœçš„æ˜¾ç¤º
+;;ä»¥ä¸‹ä¸¤ç§æ–¹å¼éƒ½å¯ä»¥è‰¯å¥½çš„ä½¿ç”¨
 
 (when (eq system-type 'windows-nt)
   ;;(set-default buffer-file-coding-system 'utf-8)
@@ -170,7 +173,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;ÉèÖÃ³£ÓÃ¹«¹²º¯Êı
+;;;;è®¾ç½®å¸¸ç”¨å…¬å…±å‡½æ•°
 (defun micro-common-tooltik-dir-set()
   (if (eq system-type `windows-nt)
       (add-to-list 'load-path 
