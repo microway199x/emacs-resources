@@ -31,8 +31,8 @@
 
 ;;设置default frame window size
 ;;(set-frame-position (selected-frame) 0 0)
-(setq default-frame-alist '((height . 39) 
-                            (width . 130) 
+(setq default-frame-alist '((height . 40) 
+                            (width . 120) 
                             (menu-bar-lines . 20)
                           ;;(tool-bar-lines . 2)
                             ))
