@@ -171,11 +171,9 @@
 (setq org-todo-keywords
   '(
     (sequence "?" ">" "=" "|"  "#")
-    (sequence "TODO(t)" "BOXD" "ONGO(o)" "WAIT(w)" "|" "DONE(d!)" "ABORT(a!)")))
-;; (setq org-todo-keywords
-;;   '((type "工作---(w!)" "学习---(s!)" "休闲---(l!)" "|")
-;;     (sequence "TODO===(t!)" "IMDO===" "ONGO>>>(o!)" "|" "DONE---(d!)" "ABORT--(a!)")))
-
+    ;;(sequence "TODO(t)" "BOXD" "ONGO(o)" "WAIT(w)" "|" "DONE(d!)" "ABORT(a!)")
+    (sequence "TODO(t)" "ONGO(o)" "WAIT(w)" "|" "DONE(d!)" "ABORT(a!)")
+    ))
 ;;;3.2 TODO 关键字face
 (setq org-todo-keyword-faces 
       '(
@@ -184,12 +182,21 @@
         ("=" . "red")
         ("#" . "green")
 	("TODO" . "red")
-        ("BOXD" . "red")
+        ;;("BOXD" . "red") ;;use tag 
         ("WAIT" . "purple")
         ("ONGO" . "skyblue")
         ("DONE" . "green")
         ("ABORT" . "gray")))
+(setq org-tags-column 100)
 
+;;(setq org-tag-alist '(
+;;  (:startgroup . nil)   ;;使用:startgroup和:endgroup定义排他性标签组,选择其中一组tag
+;;  ("@BOX" . ?b) 
+;;  ("@MEET" . ?m)
+;;  (:endgroup . nil)
+;;  ("RTL" . ?r)
+;;  ("uArch" . ?u)
+;;))
 ;;;}} 3.0 ORG-GTD
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
