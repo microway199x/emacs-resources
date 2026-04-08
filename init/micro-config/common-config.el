@@ -22,14 +22,14 @@
 (transient-mark-mode 1)                          ;;highlight mark area
 
 
-;;frame & window config ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;frame & window config ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;鼠标只会滑到离边界3行的位置
 (setq scroll-margin 3
       scroll-conservatively 10000)           
 
 (tool-bar-mode -1)                               ;;隐藏tool bar
 
-;;设置default frame window size
+;;设置default frame window size ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;(set-frame-position (selected-frame) 0 0)
 (setq default-frame-alist '((height . 40) 
                             (width . 120) 
@@ -43,6 +43,10 @@
              "(" 
              '(buffer-file-name "%f" (dired-directory dired-directory "%b")) 
              ")"  ))
+
+;;设置mode line信息显示 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(line-number-mode t)
+(column-number-mode t)
 
 ;; window Text width setting 默认显示 80列就换行
 (setq-default fill-column 80) 
@@ -91,7 +95,7 @@
 
 (setq select-enable-clipboard t)                ;;允许emacs和外部其他程序的粘贴;;
 
-;;auto revert and auto save ;;;;;;;;
+;;auto revert and auto save ;;;;;;;;;;;;;;;;;;;;;;;;
 (global-auto-revert-mode t)                    ;;文件更改后自动加载文件
 ;;(setq auto-save-default nil)                 ;;默认300s自动保存一次
 
