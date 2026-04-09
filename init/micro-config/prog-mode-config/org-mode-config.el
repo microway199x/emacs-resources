@@ -187,7 +187,8 @@
         ("ONGO" . "skyblue")
         ("DONE" . "green")
         ("ABORT" . "gray")))
-(setq org-tags-column 100)
+
+(setq org-tags-column 81)
 
 ;;(setq org-tag-alist '(
 ;;  (:startgroup . nil)   ;;使用:startgroup和:endgroup定义排他性标签组,选择其中一组tag
